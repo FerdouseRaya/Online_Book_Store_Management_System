@@ -47,28 +47,23 @@ const bookSchema = new mongoose.Schema(
         require: false,
       },
     ],
-
     pageCount: {
       type: Number,
       require: false,
     },
-
     availability: {
       type: Boolean,
       require: true,
     },
-
     bestSeller: {
       type: Boolean,
       require: false,
     },
-
     stock: {
       type: Number,
       requied: true,
       min: 0,
     },
-
     rating: {
       type: Number,
       required: false,
@@ -76,7 +71,6 @@ const bookSchema = new mongoose.Schema(
       max: 5,
       default: 0,
     },
-
     reviews: [
       {
         reviewId: {

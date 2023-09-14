@@ -16,9 +16,11 @@ app.use(express.urlencoded({ extended: true })); // Parses data as urlencoded
 
 //Exporting all the routes
 const booksRouter = require("./routes/books");
+const authRouter = require("./routes/authentication_authorization");
 
 //main routers
 app.use("/books", booksRouter);
+app.use("/auth", authRouter);
 
 //Error Handler
 app.use((err, req, res, next) => {
