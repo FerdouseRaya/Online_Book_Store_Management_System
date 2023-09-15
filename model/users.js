@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
-
-const authSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -9,11 +8,13 @@ const authSchema = new mongoose.Schema(
     },
     email: {
       type: String,
+      unique: true,
       required: true,
     },
-    password: {
-      type: String,
-      required: true,
+    role: {
+      type: Number,
+      required: false,
+      default: 2,
     },
     phone: {
       type: String,
@@ -41,26 +42,26 @@ const authSchema = new mongoose.Schema(
         required: true,
       },
     },
-    role: {
+    wallets_balance: {
       type: Number,
-      require: false,
-      default: 2,
+      required: false,
+      default: 0,
+    },
+    failedLoginAttempts: {
+      type: Number,
+      required: false,
+    },
+    lastFailedLogin: {
+      type: Date,
+      required: false,
     },
     verified: {
       type: Boolean,
-      require: false,
+      required: false,
       default: false,
     },
-    //referencing Users Schema
-    user: {
-      type: mongoose.Types.ObjectId,
-      ref: "users",
-      required: true,
-    },
   },
-  {
-    timestamps: true,
-  }
+  { timestamp: true }
 );
-const Auth = mongoose.model("auths", authSchema);
-module.exports = Auth;
+const User = mongoose.model("users", userSchema);
+module.exports = User;

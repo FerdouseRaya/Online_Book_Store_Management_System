@@ -1,6 +1,6 @@
 const express = require("express");
 const routes = express();
-const authController = require("../controller/authentication_authorization");
+const authController = require("../controller/authentication_authorizationController");
 const { isAuthorized } = require("../middleware/authentication_authorization");
 //const { authValidator } = require("../middleware/validation");
 
