@@ -60,6 +60,25 @@ class User {
       );
     }
   }
+  async deleteUser(req, res) {
+    const { userIDs } = req.body;
+    try {
+      const deleteItemResult = await UsersModel.deleteMany({
+        _id: { $in: userIDs },
+      });
+      if (deleteItemResult.deletedCount > 0) {
+        return sendResponse(res, HTTP_STATUS.OK, "User/s deleted Successfully");
+      } else {
+        return sendResponse(res, HTTP_STATUS.NOT_FOUND, "User/s not found!");
+      }
+    } catch (error) {
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal Server Error..."
+      );
+    }
+  }
 }
 
 module.exports = new User();

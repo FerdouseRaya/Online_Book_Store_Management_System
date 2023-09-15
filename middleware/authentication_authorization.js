@@ -36,4 +36,24 @@ const isAuthorized = (req, res, next) => {
     );
   }
 };
-module.exports = { isAuthorized };
+const isAdmin = (req, res, next) => {
+  try {
+    const jwtToken = req.headers.authorization.split(" ")[1];
+    const decodedToken = jsonwebtoken.decode(jwtToken);
+    if (!decodedToken) {
+      throw new Error();
+    }
+    if (decodedToken.role === 1) {
+      console.log("Hello");
+      res.status(200).send(success("Hello Admin!"));
+      next();
+    } else {
+      res
+        .status(400)
+        .send(failure("User is not an Admin. Permission Denied!!!"));
+    }
+  } catch (error) {
+    res.status(400).send(failure("Autentication Error"));
+  }
+};
+module.exports = { isAuthorized, isAdmin };

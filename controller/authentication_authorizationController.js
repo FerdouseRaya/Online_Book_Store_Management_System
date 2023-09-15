@@ -42,10 +42,7 @@ class Auth {
         const infromation = await AuthModel.findOne({ email: email })
           .select("-id -name -email -createdAt -updatedAt")
           .populate("user", "-password");
-        console.log(infromation);
-        // await authorizedUser.findByIdAndUpdate(authorizedUser._id, {
-        //   $set: { failedLoginAttempts: 0, lastFailedLogin: null },
-        // });
+        //console.log(infromation);
         authorizedUser.failedLoginAttempts = 0;
         authorizedUser.lastFailedLogin = null;
 

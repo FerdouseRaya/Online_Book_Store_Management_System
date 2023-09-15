@@ -1,4 +1,4 @@
-const { body, params } = require("express-validator");
+const { body, query } = require("express-validator");
 
 const authValidator = {
   signup: [
@@ -129,6 +129,39 @@ const bookValidator = {
       .optional()
       .isIn(["English", "Spanish", "French", "German"])
       .withMessage("Invalid language selection."),
+  ],
+  viewBySearch: [
+    query("author")
+      .optional()
+      .isString()
+      .withMessage("Author name must be string!")
+      .bail()
+      .notEmpty()
+      .withMessage("Author field can not be empty!")
+      .bail()
+      .isLength({ max: 20 })
+      .withMessage("Author name can not be more than 30 characters."),
+    query("genre")
+      .optional()
+      .isString()
+      .withMessage("Genre field need to be string!")
+      .bail()
+      .notEmpty()
+      .withMessage("Genre field can not be empty!")
+      .bail()
+      .isLength({ max: 10 })
+      .withMessage("Genre field can not be more than 10 characters.")
+      .bail()
+      .isIn([
+        "Fiction",
+        "Non-Fiction",
+        "Fantasy",
+        "'Science fiction",
+        "Novel",
+        "Mystery",
+        "Self-help",
+      ])
+      .withMessage("Invalid genre selection."),
   ],
 };
 const userValidator = {
