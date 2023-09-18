@@ -3,7 +3,6 @@ const { sendResponse } = require("../common/common");
 const HTTP_STATUS = require("../constants/statusCode");
 const CartModel = require("../model/carts");
 const UserModel = require("../model/users");
-const BookModel = require("../model/books");
 const transactionModel = require("../model/transactions");
 class transaction {
   async checkOut(req, res) {
@@ -76,6 +75,39 @@ class transaction {
       );
     }
   }
-  async viewTransaction(req, res) {}
+  async viewTransaction(req, res) {
+    try {
+      const { transaction, user } = req.body;
+      const transactionItem = await transactionModel
+        .findOne({
+          _id: transaction,
+          user: user,
+        })
+        .populate("user", "name email phone wallets_balance")
+        .populate("books.book", "-_id title author price rating reviews")
+        .select("-__v");
+      console.log(transactionItem);
+      if (!transactionItem) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "No transaction is found for the user!"
+        );
+      }
+      return sendResponse(
+        res,
+        HTTP_STATUS.OK,
+        "Transaction Information retrive successfully",
+        transactionItem
+      );
+    } catch (error) {
+      console.log(error);
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal Server Error!"
+      );
+    }
+  }
 }
 module.exports = new transaction();

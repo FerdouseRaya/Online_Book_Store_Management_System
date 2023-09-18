@@ -225,6 +225,72 @@ const bookValidator = {
         "Self-help",
       ])
       .withMessage("Invalid genre selection."),
+    query("language")
+      .optional()
+      .isString()
+      .withMessage("quary for language need to be string!")
+      .bail()
+      .notEmpty()
+      .withMessage("quary for language can not be empty!")
+      .bail()
+      .isLength({ max: 10 })
+      .withMessage("quary for language can not be more than 10 characters.")
+      .bail()
+      .isIn(["English", "Spanish", "French", "German"])
+      .withMessage("Invalid language selection."),
+    query("ISBN")
+      .optional()
+      .bail()
+      .isString()
+      .withMessage("ISBN must be string")
+      .bail()
+      .notEmpty()
+      .withMessage("ISBN is required, can not be empty!")
+      .bail()
+      .custom((value) => {
+        const cleanedISBN = value.replace(/-/g, "").replace(/\D/g, "");
+        if (!cleanedISBN) {
+          throw new Error(
+            "ISBN is required and must contain at least one digit."
+          );
+        }
+        if (cleanedISBN.length < 8 || cleanedISBN.length > 15) {
+          throw new Error(
+            "The ISBN should have between 8 and 15 digits (ignoring hyphens)."
+          );
+        }
+        return true;
+      })
+      .withMessage("Invalid ISBN format or length."),
+    query("sortorder")
+      .optional()
+      .isString()
+      .withMessage("Query for sortorder must be a string!")
+      .bail()
+      .isIn(["asc", "desc"])
+      .withMessage("Invalid sort order."),
+    query("sortparam")
+      .optional()
+      .isString()
+      .withMessage("Query for sortparam must be a string!")
+      .bail()
+      .isIn(["price", "rating", "discountPercentage", "stock"])
+      .withMessage("Invalid sort parameter."),
+    query("availability")
+      .optional()
+      .isString()
+      .withMessage("Query for availability must be a string!")
+      .bail()
+      .isIn(["true", "false"])
+      .withMessage("Invalid request!"),
+    query("bestSeller")
+      .optional()
+      .isString()
+      .withMessage("Query for availability must be a string!")
+      .bail()
+      .isIn(["true", "false"])
+      .withMessage("Invalid request!"),
+    ,
   ],
 };
 const userValidator = {

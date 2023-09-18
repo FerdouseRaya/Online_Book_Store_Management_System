@@ -118,11 +118,30 @@ class Book {
       } = req.query;
       const filter = {};
 
+      if (availability !== undefined) {
+        filter.availability = { $regex: availability, $option: "i" };
+      }
+      if (bestSeller !== undefined) {
+        filter.bestSeller = { $regex: bestSeller, $option: "i" };
+      }
+      if (ISBN !== undefined) {
+        filter.ISBN = { $regex: ISBN, $option: "i" };
+      }
       if (author !== undefined) {
         filter.author = { $regex: author, $options: "i" };
       }
       if (genre !== undefined) {
         filter.genre = { $regex: genre, $options: "i" };
+      }
+      if (language !== undefined) {
+        filter.genre = { $regex: language, $options: "i" };
+      }
+      if (search !== undefined) {
+        filter.$or = [
+          { title: { $regex: search, $options: "i" } },
+          { author: { $regex: search, $options: "i" } },
+          { genre: { $regex: search, $options: "i" } },
+        ];
       }
       const getBooks = await BookModel.find(filter)
         .skip(skip)
