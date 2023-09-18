@@ -3,7 +3,7 @@ const { validationResult } = require("express-validator");
 const { sendResponse } = require("../common/common");
 const HTTP_STATUS = require("../constants/statusCode");
 
-const isAuthorized = (req, res, next) => {
+const isAuthenticated = (req, res, next) => {
   try {
     if (!req.headers.authorization) {
       return sendResponse(res, HTTP_STATUS.UNAUTHORIZED, "Not Authorized!");
@@ -45,15 +45,34 @@ const isAdmin = (req, res, next) => {
     }
     if (decodedToken.role === 1) {
       console.log("Hello");
-      res.status(200).send(success("Hello Admin!"));
+      return sendResponse(res, HTTP_STATUS.OK, "Successful Access!");
       next();
     } else {
-      res
-        .status(400)
-        .send(failure("User is not an Admin. Permission Denied!!!"));
+      return sendResponse(res, HTTP_STATUS.BAD_REQUEST, "Permission Denied!!!");
     }
   } catch (error) {
-    res.status(400).send(failure("Autentication Error"));
+    return sendResponse(res, HTTP_STATUS.UNAUTHORIZED, "Authentication Error!");
   }
 };
-module.exports = { isAuthorized, isAdmin };
+const isUserandVerified = (req, res, next) => {
+  try {
+    const jwtToken = req.headers.authorization.split(" ")[1];
+    const decodedToken = jsonwebtoken.decode(jwtToken);
+    if (!decodedToken) {
+      throw new Error();
+    }
+    if (decodedToken.role === 2 && decodedToken.verified === true) {
+      // User is logged in and verified
+      return next();
+    } else {
+      return sendResponse(
+        res,
+        HTTP_STATUS.UNAUTHORIZED,
+        "User is not verified or not logged in!"
+      );
+    }
+  } catch (error) {
+    return sendResponse(res, HTTP_STATUS.UNAUTHORIZED, "Authentication Error!");
+  }
+};
+module.exports = { isAuthenticated, isAdmin, isUserandVerified };

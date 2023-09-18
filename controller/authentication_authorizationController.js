@@ -10,17 +10,24 @@ class Auth {
   async login(req, res) {
     try {
       const { email, password } = req.body;
-      const authorizedUser = await AuthModel.findOne({ email: email });
+      const authorizedUser = await AuthModel.findOne({ email: email })
+        .populate("user", "-createdAt -updatedAt")
+        .select("-id -name -email -address -createdAt -updatedAt");
+      console.log(authorizedUser);
+      console.log(authorizedUser.lastFailedLogin);
+      console.log(authorizedUser.failedLoginAttempts);
       if (!authorizedUser) {
         return sendResponse(
           res,
           HTTP_STATUS.UNAUTHORIZED,
-          "Invalid Credentials!"
+          "User is not registered!"
         );
       }
 
       const timeSinceLastAttempt = new Date() - authorizedUser.lastFailedLogin;
-      const timeout = 1 * 60 * 1000;
+      const timeout = 1 * 60 * 1000; // 1 minute in milliseconds
+      console.log(authorizedUser.failedLoginAttempts);
+      console.log(timeSinceLastAttempt);
       if (
         authorizedUser.failedLoginAttempts >= 5 &&
         timeSinceLastAttempt < timeout
@@ -36,19 +43,15 @@ class Auth {
         password,
         authorizedUser.password
       );
-      console.log(isValidPassword);
 
       if (isValidPassword) {
-        const infromation = await AuthModel.findOne({ email: email })
-          .select("-id -name -email -createdAt -updatedAt")
-          .populate("user", "-password");
-        //console.log(infromation);
+        // Reset failed login attempts and last failed login timestamp
         authorizedUser.failedLoginAttempts = 0;
         authorizedUser.lastFailedLogin = null;
 
+        // Generate and send JWT token
         const responseAuth = authorizedUser.toObject();
         delete responseAuth.password;
-
         const jswt = jsonwebtoken.sign(responseAuth, process.env.SECRET_KEY, {
           expiresIn: "1h",
         });
@@ -60,10 +63,11 @@ class Auth {
           responseAuth
         );
       } else {
-        await authorizedUser.findByIdAndUpdate(authorizedUser._id, {
-          $inc: { failedLoginAttempts: 1 },
-          $set: { lastFailedLogin: new Date() },
-        });
+        // Increment failed login attempts and record last failed login timestamp
+        authorizedUser.failedLoginAttempts += 1;
+        authorizedUser.lastFailedLogin = new Date();
+        await authorizedUser.save();
+
         return sendResponse(
           res,
           HTTP_STATUS.UNAUTHORIZED,
@@ -79,6 +83,7 @@ class Auth {
       );
     }
   }
+
   async signup(req, res) {
     try {
       const validation = validationResult(req).array();

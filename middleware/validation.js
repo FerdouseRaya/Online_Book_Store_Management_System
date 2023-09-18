@@ -62,7 +62,7 @@ const bookValidator = {
       .withMessage("Author field can not be empty!")
       .bail()
       .isLength({ max: 20 })
-      .withMessage("Author name can not be more than 30 characters."),
+      .withMessage("Author name can not be more than 20 characters."),
     body("ISBN")
       .exists()
       .withMessage("ISBN number was not provided!")
@@ -98,8 +98,8 @@ const bookValidator = {
       .notEmpty()
       .withMessage("Genre field can not be empty!")
       .bail()
-      .isLength({ max: 20 })
-      .withMessage("Genre field can not be more than 10 characters."),
+      .isLength({ max: 15 })
+      .withMessage("Genre field can not be more than 15 characters."),
     body("price")
       .exists()
       .withMessage("Price was not provided!")
@@ -110,8 +110,7 @@ const bookValidator = {
       .isFloat({ min: 5 })
       .withMessage("Price must be greater than or equal to 5(dollars)."),
     body("rating")
-      .exists()
-      .withMessage("Rating was not provided!")
+      .optional()
       .bail()
       .isNumeric()
       .withMessage("Rating must be a number.")
@@ -129,6 +128,70 @@ const bookValidator = {
       .optional()
       .isIn(["English", "Spanish", "French", "German"])
       .withMessage("Invalid language selection."),
+  ],
+  editInformation: [
+    body("title")
+      .optional()
+      .bail()
+      .isString()
+      .withMessage("Title must be string!")
+      .bail()
+      .notEmpty()
+      .withMessage("Title field can not be empty!")
+      .bail()
+      .isLength({ max: 50 })
+      .withMessage("The title can not be more than 50 characters."),
+    body("author")
+      .optional()
+      .bail()
+      .isString()
+      .withMessage("Author name must be string!")
+      .bail()
+      .notEmpty()
+      .withMessage("Author field can not be empty!")
+      .bail()
+      .isLength({ max: 20 })
+      .withMessage("Author name can not be more than 20 characters."),
+    body("genre")
+      .optional()
+      .bail()
+      .isString()
+      .withMessage("Genre field need to be string!")
+      .bail()
+      .notEmpty()
+      .withMessage("Genre field can not be empty!")
+      .bail()
+      .isLength({ max: 15 })
+      .withMessage("Genre field can not be more than 15 characters."),
+    body("price")
+      .optional()
+      .bail()
+      .isNumeric()
+      .withMessage("Price must be a number!")
+      .bail()
+      .notEmpty()
+      .withMessage("Price field can not be empty!")
+      .isFloat({ min: 5 })
+      .withMessage("Price must be greater than or equal to 5(dollars)."),
+    body("pageCount")
+      .optional()
+      .isNumeric()
+      .withMessage("Page count must be a number.")
+      .bail()
+      .notEmpty()
+      .withMessage("PageCount field can not be empty!")
+      .bail()
+      .isInt({ min: 40 })
+      .withMessage(
+        "Page count must be a positive integer.If the page count is less than 40, this book can't be stored!"
+      ),
+    body("language")
+      .optional()
+      .isIn(["English", "Spanish", "French", "German"])
+      .withMessage("Invalid language selection.")
+      .bail()
+      .notEmpty()
+      .withMessage("language field can not be empty!"),
   ],
   viewBySearch: [
     query("author")
@@ -167,6 +230,8 @@ const bookValidator = {
 const userValidator = {
   create: [
     body("name")
+      .exists()
+      .withMessage("Name is not provided.")
       .trim()
       .isString()
       .withMessage("Name must be a string")
@@ -221,5 +286,37 @@ const userValidator = {
       .notEmpty()
       .withMessage("Country is required"),
   ],
+  updateBalance: [
+    body("wallets_balance")
+      .exists()
+      .withMessage("Balance need to be provided!")
+      .custom((value) => {
+        if (value > 3000) {
+          throw new Error("Balance must be less than or eqaul to 3000");
+        }
+      }),
+  ],
 };
-module.exports = { bookValidator, authValidator, userValidator };
+const cartValidator = {
+  addtoCart: [
+    body("userID")
+      .exists()
+      .withMessage("User ID was not provided!")
+      .bail()
+      .notEmpty()
+      .withMessage("UserID field can not be empty!"),
+    body("book")
+      .exists()
+      .withMessage("bookID was not provided!")
+      .bail()
+      .notEmpty()
+      .withMessage("BookID field can not be empty!"),
+    body("quantity")
+      .exists()
+      .withMessage("quantity was not provided!")
+      .bail()
+      .notEmpty()
+      .withMessage("quantity field can not be empty!"),
+  ],
+};
+module.exports = { bookValidator, authValidator, userValidator, cartValidator };

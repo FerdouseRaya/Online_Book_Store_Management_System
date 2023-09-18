@@ -25,8 +25,8 @@ class Book {
       availability,
       bestSeller,
       stock,
-      rating,
     } = req.body;
+    const defaultReview = "Be the first to add a review for this book";
     const exisitingBook = await BookModel.findOne({ ISBN: ISBN });
     if (exisitingBook) {
       return sendResponse(
@@ -47,7 +47,7 @@ class Book {
       availability: availability,
       bestSeller: bestSeller,
       stock: stock,
-      rating: rating,
+      reviews: [{ reviewContent: defaultReview }],
     });
     if (books) {
       return sendResponse(
@@ -133,7 +133,7 @@ class Book {
         return sendResponse(
           res,
           HTTP_STATUS.FOUND,
-          "Successfully received all books!",
+          "Successfully received the books!",
           {
             totalBooks: totalBooks,
             countPerPage: getBooks.length,
@@ -167,6 +167,62 @@ class Book {
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,
         "Internal Server Error..."
+      );
+    }
+  }
+  async editInformation(req, res) {
+    try {
+      const { bookID, ...updatedData } = req.body;
+      const checkBookExists = await BookModel.find({ _id: bookID });
+      if (!checkBookExists) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "No book found with this id!"
+        );
+      }
+
+      const excludedFields = ["ISBN", "rating", "reviews"];
+      if (excludedFields.some((field) => field in updatedData)) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.FAILED_DEPENDENCY,
+          "Don't have the access to edit these fields"
+        );
+      }
+      const filteredData = Object.keys(updatedData).reduce(
+        (previousData, index) => {
+          if (!excludedFields.includes(index)) {
+            previousData[index] = updatedData[index];
+          }
+          return previousData;
+        },
+        {}
+      );
+
+      const updatedBook = await BookModel.findByIdAndUpdate(
+        { _id: bookID },
+        filteredData,
+        { new: true }
+      );
+      if (updatedBook) {
+        return sendResponse(res, HTTP_STATUS.OK, {
+          message: "Successfully Edited the Book's Information!",
+          result: updatedBook,
+        });
+      } else {
+        return sendResponse(
+          res,
+          HTTP_STATUS.FAILED_DEPENDENCY,
+          "Failed to update information!"
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal Server Error!"
       );
     }
   }

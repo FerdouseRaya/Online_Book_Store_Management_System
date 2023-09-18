@@ -18,12 +18,17 @@ app.use(express.urlencoded({ extended: true })); // Parses data as urlencoded
 const booksRouter = require("./routes/books");
 const authRouter = require("./routes/authentication_authorization");
 const usersRouter = require("./routes/users");
+const cartRouter = require("./routes/carts");
+const reviewRouter = require("./routes/reviews");
+const transactionRouter = require("./routes/transactions");
 
 //main routers
 app.use("/books", booksRouter);
 app.use("/auth", authRouter);
 app.use("/users", usersRouter);
-
+app.use("/carts", cartRouter);
+app.use("/reviews", reviewRouter);
+app.use("/transactions", transactionRouter);
 //Error Handler
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {

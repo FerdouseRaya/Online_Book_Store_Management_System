@@ -45,6 +45,8 @@ const userSchema = new mongoose.Schema(
     wallets_balance: {
       type: Number,
       required: false,
+      min: 0,
+      max: 3000,
       default: 0,
     },
     failedLoginAttempts: {

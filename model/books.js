@@ -32,7 +32,6 @@ const bookSchema = new mongoose.Schema(
       require: false,
       min: 0,
       max: 100,
-      default: 0,
     },
     discountStartsDate: {
       type: Date,
@@ -81,6 +80,10 @@ const bookSchema = new mongoose.Schema(
         },
         reviewContent: {
           type: String,
+          required: false,
+        },
+        rating: {
+          type: Number,
           required: false,
         },
       },
