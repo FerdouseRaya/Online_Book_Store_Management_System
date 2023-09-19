@@ -1,15 +1,34 @@
 const express = require("express");
 const routes = express();
 const reviewController = require("../controller/reviewsController");
-const { cartValidator } = require("../middleware/validation");
+const { reviewValidator } = require("../middleware/validation");
 const {
-  isAuthenticated,
-  isAdmin,
+  isUserandVerified,
 } = require("../middleware/authentication_authorization");
 
-routes.post("/addtoReviewandRating", reviewController.addReviewandRating);
-routes.get("/viewReviewRating", reviewController.viewReviewandRating);
-routes.patch("/updateReviewandRating", reviewController.updateReviewandRating);
-routes.delete("/removeReviewandRating", reviewController.removeReviewandRating);
+routes.post(
+  "/addtoReviewandRating",
+  isUserandVerified,
+  reviewValidator.addReviewandRating,
+  reviewController.addReviewandRating
+);
+routes.get(
+  "/viewReviewRating/:bookID",
+  isUserandVerified,
+  reviewValidator.viewReviewandRating,
+  reviewController.viewReviewandRating
+);
+routes.patch(
+  "/updateReviewandRating",
+  isUserandVerified,
+  reviewValidator.updateReviewandRating,
+  reviewController.updateReviewandRating
+);
+routes.delete(
+  "/removeReviewandRating",
+  isUserandVerified,
+  reviewValidator.removeReviewandRating,
+  reviewController.removeReviewandRating
+);
 
 module.exports = routes;

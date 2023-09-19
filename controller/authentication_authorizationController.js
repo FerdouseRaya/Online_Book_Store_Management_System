@@ -1,3 +1,5 @@
+const path = require("path");
+const fs = require("fs");
 const { validationResult } = require("express-validator");
 const bcrypt = require("bcrypt");
 const jsonwebtoken = require("jsonwebtoken");
@@ -5,17 +7,33 @@ const { sendResponse } = require("../common/common");
 const HTTP_STATUS = require("../constants/statusCode");
 const AuthModel = require("../model/authentication_authorization");
 const UserModel = require("../model/users");
+const logFilePath = path.join(__dirname, "../server", "admin_log.log");
+
+function writeToLog(Path, logEntry) {
+  let logFile = Path;
+  fs.appendFile(logFile, logEntry + "\n", (err) => {
+    if (err) {
+      console.error(`Error writing to log file: ${err}`);
+    }
+  });
+}
 
 class Auth {
   async login(req, res) {
     try {
+      const validation = validationResult(req).array();
+      if (validation.length > 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "Failed to add the User!",
+          validation
+        );
+      }
       const { email, password } = req.body;
       const authorizedUser = await AuthModel.findOne({ email: email })
         .populate("user", "-createdAt -updatedAt")
         .select("-id -name -email -address -createdAt -updatedAt");
-      console.log(authorizedUser);
-      console.log(authorizedUser.lastFailedLogin);
-      console.log(authorizedUser.failedLoginAttempts);
       if (!authorizedUser) {
         return sendResponse(
           res,
@@ -26,8 +44,8 @@ class Auth {
 
       const timeSinceLastAttempt = new Date() - authorizedUser.lastFailedLogin;
       const timeout = 1 * 60 * 1000; // 1 minute in milliseconds
-      console.log(authorizedUser.failedLoginAttempts);
-      console.log(timeSinceLastAttempt);
+      // console.log(authorizedUser.failedLoginAttempts);
+      // console.log(timeSinceLastAttempt);
       if (
         authorizedUser.failedLoginAttempts >= 5 &&
         timeSinceLastAttempt < timeout
@@ -56,6 +74,11 @@ class Auth {
           expiresIn: "1h",
         });
         responseAuth.token = jswt;
+        const logMessage = `Time: ${new Date()} |success:Successfully logged in..."!|URL: ${
+          req.hostname
+        }${req.port ? ":" + req.port : ""}${req.originalUrl}`;
+        writeToLog(logFilePath, logMessage);
+
         return sendResponse(
           res,
           HTTP_STATUS.OK,
@@ -76,6 +99,10 @@ class Auth {
       }
     } catch (error) {
       console.error(error);
+      const logMessage = `Time:${new Date()} |failed Message:Authentication Error...|URL: ${
+        req.hostname
+      }${req.port ? ":" + req.port : ""}${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFilePath, logMessage);
       return sendResponse(
         res,
         HTTP_STATUS.NON_AUTHORITATIVE_INFORMATION,
@@ -148,12 +175,22 @@ class Auth {
       await authUser.save();
 
       if (!authUser) {
+        const logMessage = `Time:${new Date()} |failed:SignUP unsuccessful, failed to add the user!|URL: ${
+          req.hostname
+        }${req.port ? ":" + req.port : ""}${
+          req.originalUrl
+        }| [error: ${error}]`;
+        writeToLog(logFilePath, logMessage);
         return sendResponse(
           res,
           HTTP_STATUS.UNPROCESSABLE_ENTITY,
           "SignUP unsuccessful, failed to add the user!"
         );
       }
+      const logMessage = `Time: ${new Date()} |success:Successfully SingedUP!|URL: ${
+        req.hostname
+      }${req.port ? ":" + req.port : ""}${req.originalUrl}`;
+      writeToLog(logFilePath, logMessage);
       return sendResponse(
         res,
         HTTP_STATUS.OK,
@@ -161,7 +198,10 @@ class Auth {
         authUser
       );
     } catch (error) {
-      console.log(error);
+      const logMessage = `Time:${new Date()} |failed:Internal Server Error...|URL: ${
+        req.hostname
+      }${req.port ? ":" + req.port : ""}${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logMessage);
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,

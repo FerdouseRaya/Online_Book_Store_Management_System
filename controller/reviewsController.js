@@ -1,3 +1,5 @@
+const path = require("path");
+const fs = require("fs");
 const mongoose = require("mongoose");
 const { validationResult } = require("express-validator");
 const ReviewModel = require("../model/reviews");
@@ -51,7 +53,8 @@ class Review {
         (total, review) => total + review.rating,
         0
       );
-      const averageRating = totalRatings / bookReviews.length;
+      const averageRating =
+        bookReviews.length > 0 ? totalRatings / bookReviews.length : 0;
 
       const bulkOperations = [
         {
@@ -72,6 +75,7 @@ class Review {
                 reviews: {
                   reviewId: savedReview._id,
                   reviewContent: review,
+                  rating: rating,
                 },
               },
             },
@@ -125,24 +129,20 @@ class Review {
 
       const findBook = await ReviewModel.find({ book: bookID });
       console.log(findBook);
-      if (findBook.length > 0) {
-        const totalRating = findBook.reduce(
-          (sum, review) => sum + review.rating,
-          0
-        );
-        console.log(totalRating);
-        const newRating = totalRating / findBook.length;
+      const totalRating = findBook.reduce(
+        (sum, review) => sum + review.rating,
+        0
+      );
+      const newRating = findBook.length > 0 ? totalRating / findBook.length : 0;
 
-        await BookModel.findByIdAndUpdate(bookID, { rating: newRating });
-        return sendResponse(res, HTTP_STATUS.OK, "Rating updated Successfully");
-      } else {
-        await BookModel.findByIdAndUpdate(bookID, { rating: 0 });
-        return sendResponse(
-          res,
-          HTTP_STATUS.UNAUTHORIZED,
-          "Something went wrong!"
-        );
-      }
+      // Update the book's rating
+      await BookModel.findByIdAndUpdate(bookID, { rating: newRating });
+
+      return sendResponse(
+        res,
+        HTTP_STATUS.OK,
+        "Review and rating updated Successfully"
+      );
     } catch (error) {
       console.log(error);
       return sendResponse(
@@ -153,7 +153,7 @@ class Review {
     }
   }
   async removeReviewandRating(req, res) {
-    const { user, bookID, reviewID, rating } = req.body;
+    const { user, bookID, reviewID } = req.body;
     const review = await ReviewModel.findById(reviewID);
     if (!review) {
       return sendResponse(
@@ -188,9 +188,56 @@ class Review {
       },
       { new: true }
     );
+    const bookReviews = await ReviewModel.find({ book: bookID });
+    const totalRating = bookReviews.reduce(
+      (sum, review) => sum + review.rating,
+      0
+    );
+    const newRating =
+      bookReviews.length > 0 ? totalRating / bookReviews.length : 0;
+
+    // Update the book's rating with the new average rating
+    await BookModel.findByIdAndUpdate(bookID, { rating: newRating });
     return sendResponse(res, HTTP_STATUS.OK, "Review Deleted Successfull");
   }
-  async viewReviewandRating(req, res) {}
+  async viewReviewandRating(req, res) {
+    try {
+      const { bookID } = req.params;
+      const book = await BookModel.findById(bookID);
+
+      if (!book) {
+        return sendResponse(res, HTTP_STATUS.NOT_FOUND, "Book not found!");
+      }
+
+      const bookReviews = await ReviewModel.find({ book: bookID });
+
+      // Calculating the average rating for the book
+      const totalRating = bookReviews.reduce(
+        (sum, review) => sum + review.rating,
+        0
+      );
+      const averageRating =
+        bookReviews.length > 0 ? totalRating / bookReviews.length : 0;
+
+      return sendResponse(
+        res,
+        HTTP_STATUS.OK,
+        "Successfully reviewd the book!",
+        {
+          bookTitle: book.title,
+          averageRating: averageRating,
+          reviews: bookReviews,
+        }
+      );
+    } catch (error) {
+      console.error(error);
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal Server Error!"
+      );
+    }
+  }
 }
 
 module.exports = new Review();

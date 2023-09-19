@@ -1,7 +1,17 @@
-const { validationResult, check } = require("express-validator");
+const path = require("path");
+const fs = require("fs");
+const { validationResult } = require("express-validator");
 const { sendResponse } = require("../common/common");
 const HTTP_STATUS = require("../constants/statusCode");
 const UsersModel = require("../model/users");
+function writeToLog(Path, logEntry) {
+  let logFile = Path;
+  fs.appendFile(logFile, logEntry + "\n", (err) => {
+    if (err) {
+      console.error(`Error writing to log file: ${err}`);
+    }
+  });
+}
 class User {
   async create(req, res) {
     try {
@@ -61,8 +71,17 @@ class User {
     }
   }
   async deleteUser(req, res) {
-    const { userIDs } = req.body;
     try {
+      const validation = validationResult(req).array();
+      if (validation.length > 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "Failed to add the user!",
+          validation
+        );
+      }
+      const { userIDs } = req.body;
       const deleteItemResult = await UsersModel.deleteMany({
         _id: { $in: userIDs },
       });
@@ -121,6 +140,15 @@ class User {
   }
   async editInformation(req, res) {
     try {
+      const validation = validationResult(req).array();
+      if (validation.length > 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "Failed to add the user!",
+          validation
+        );
+      }
       const { userID, ...updatedData } = req.body;
       const checkUserExists = await UsersModel.findByID({ _id: userID });
       if (!checkUserExists) {
@@ -172,6 +200,15 @@ class User {
   }
   async updateBalance(req, res) {
     try {
+      const validation = validationResult(req).array();
+      if (validation.length > 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "Failed to add the user!",
+          validation
+        );
+      }
       const { user, amount } = req.body;
       const checkUserExists = await UsersModel.findById({ _id: user });
       if (!checkUserExists) {

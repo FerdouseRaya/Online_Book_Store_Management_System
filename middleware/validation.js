@@ -1,6 +1,41 @@
 const { body, query } = require("express-validator");
 
 const authValidator = {
+  login: [
+    body("email")
+      .exists()
+      .withMessage("Email must be provided")
+      .bail()
+      .isString()
+      .withMessage("Email must be a String")
+      .bail()
+      .isEmail()
+      .withMessage("Provide the right email formate")
+      .custom((value) => {
+        if (!value.includes("@") || !value.includes(".")) {
+          throw new Error("Email must include '@' and a valid domain.");
+        }
+        return true;
+      })
+      .withMessage("Email must include '@' and a valid domain."),
+    body("password")
+      .exists()
+      .withMessage("Password must be provided")
+      .bail()
+      .isString()
+      .withMessage("Password must be a String")
+      .bail()
+      .isStrongPassword({
+        minLength: 8,
+        minLowercase: 1,
+        minUppercase: 1,
+        minSymbols: 1,
+        minNumbers: 1,
+      })
+      .withMessage(
+        "Password should be at least 8 characters, with a minimum of 1 lowercase, 1 uppercase, 1 number, and 1 symbol."
+      ),
+  ],
   signup: [
     body("email")
       .exists()
@@ -35,6 +70,9 @@ const authValidator = {
       .withMessage(
         "Password should be at least 8 characters, with a minimum of 1 lowercase, 1 uppercase, 1 number, and 1 symbol."
       ),
+    body("phone").optional().isMobilePhone(["en-US", "en-GB", "es-ES"]),
+
+    body("address").optional().notEmpty().withMessage("Address is required"),
   ],
 };
 const bookValidator = {
@@ -290,7 +328,56 @@ const bookValidator = {
       .bail()
       .isIn(["true", "false"])
       .withMessage("Invalid request!"),
-    ,
+    query("rating")
+      .optional()
+      .isFloat()
+      .withMessage("Rating must be a numeric value."),
+    query("fill")
+      .optional()
+      .isIn(["high", "low"])
+      .withMessage("Invalid parameter for fill has been provided."),
+    query("price")
+      .optional()
+      .isFloat()
+      .withMessage("Price must be a numeric value."),
+    query("stock")
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage("Stock must be a non-negative integer value."),
+    query("pageCount")
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage("Page count must be a non-negative integer value."),
+  ],
+  addDiscount: [
+    body("bookID").isMongoId().withMessage("Invalid book ID format"),
+    body("discountPercentage")
+      .isNumeric()
+      .withMessage("Discount percentage must be a number"),
+    body("discountStartTime")
+      .matches(/^\d{2}:\d{2}$/)
+      .withMessage("Invalid time format for discountStartTime"),
+    body("discountEndTime")
+      .matches(/^\d{2}:\d{2}$/)
+      .withMessage("Invalid time format for discountEndTime"),
+  ],
+  updateDiscount: [
+    query("bookID").isMongoId().withMessage("Invalid book ID format"),
+    body("discountPercentage")
+      .isNumeric()
+      .withMessage("Discount percentage must be a number"),
+    body("discountStartTime")
+      .matches(/^\d{2}:\d{2}$/)
+      .withMessage("Invalid time format for discountStartTime"),
+    body("discountEndTime")
+      .matches(/^\d{2}:\d{2}$/)
+      .withMessage("Invalid time format for discountEndTime"),
+  ],
+  deleteBooks: [
+    body("bookID").isArray().withMessage("Invalid book ID format"),
+    body("bookID.*")
+      .isMongoId()
+      .withMessage("Invalid book ID format in the array"),
   ],
 };
 const userValidator = {
@@ -352,7 +439,23 @@ const userValidator = {
       .notEmpty()
       .withMessage("Country is required"),
   ],
+  deleteUser: [
+    body("userIDs").notEmpty().withMessage("User IDs array cannot be empty"),
+  ],
+  editInformation: [
+    body("userID")
+      .notEmpty()
+      .withMessage("User IDs array cannot be empty")
+      .isMongoId()
+      .withMessage("Invalid user ID format"),
+  ],
+
   updateBalance: [
+    body("user")
+      .exists()
+      .withMessage("User ID need to be provided!")
+      .isMongoId()
+      .withMessage("Invalid user ID format"),
     body("wallets_balance")
       .exists()
       .withMessage("Balance need to be provided!")
@@ -384,5 +487,143 @@ const cartValidator = {
       .notEmpty()
       .withMessage("quantity field can not be empty!"),
   ],
+  removefromCart: [
+    body("userID")
+      .exists()
+      .withMessage("User ID was not provided!")
+      .bail()
+      .notEmpty()
+      .withMessage("UserID field can not be empty!"),
+    body("book")
+      .exists()
+      .withMessage("bookID was not provided!")
+      .bail()
+      .notEmpty()
+      .withMessage("BookID field can not be empty!"),
+    body("quantity")
+      .exists()
+      .withMessage("quantity was not provided!")
+      .bail()
+      .notEmpty()
+      .withMessage("quantity field can not be empty!"),
+  ],
+  viewCart: [
+    body("userID")
+      .notEmpty()
+      .withMessage("User ID is required")
+      .isMongoId()
+      .withMessage("User ID must be a valid MongoDB ID"),
+  ],
 };
-module.exports = { bookValidator, authValidator, userValidator, cartValidator };
+const reviewValidator = {
+  addReviewandRating: [
+    body("user")
+      .notEmpty()
+      .withMessage("User ID is required")
+      .isMongoId()
+      .withMessage("User ID must be a valid MongoDB ID"),
+
+    body("book")
+      .notEmpty()
+      .withMessage("Book ID is required")
+      .isMongoId()
+      .withMessage("Book ID must be a valid MongoDB ID"),
+
+    body("reviews").notEmpty().withMessage("Review content is required"),
+
+    body("rating")
+      .notEmpty()
+      .withMessage("Rating is required")
+      .isInt({ min: 0, max: 5 })
+      .withMessage("Rating must be an integer between 0 and 5"),
+  ],
+  updateReviewandRating: [
+    body("user")
+      .notEmpty()
+      .withMessage("User ID is required")
+      .isMongoId()
+      .withMessage("User ID must be a valid MongoDB ID"),
+
+    body("bookID")
+      .notEmpty()
+      .withMessage("Book ID is required")
+      .isMongoId()
+      .withMessage("Book ID must be a valid MongoDB ID"),
+
+    body("reviewID")
+      .notEmpty()
+      .withMessage("Review ID is required")
+      .isMongoId()
+      .withMessage("Review ID must be a valid MongoDB ID"),
+
+    body("reviews").notEmpty().withMessage("Review content is required"),
+
+    body("rating")
+      .notEmpty()
+      .withMessage("Rating is required")
+      .isInt({ min: 0, max: 5 })
+      .withMessage("Rating must be an integer between 0 and 5"),
+  ],
+  removeReviewandRating: [
+    body("user")
+      .notEmpty()
+      .withMessage("User ID is required")
+      .isMongoId()
+      .withMessage("User ID must be a valid MongoDB ID"),
+
+    body("bookID")
+      .notEmpty()
+      .withMessage("Book ID is required")
+      .isMongoId()
+      .withMessage("Book ID must be a valid MongoDB ID"),
+
+    body("reviewID")
+      .notEmpty()
+      .withMessage("Review ID is required")
+      .isMongoId()
+      .withMessage("Review ID must be a valid MongoDB ID"),
+  ],
+  viewReviewandRating: [
+    query("bookID")
+      .notEmpty()
+      .withMessage("Book ID is required")
+      .isMongoId()
+      .withMessage("Book ID must be a valid MongoDB ID"),
+  ],
+};
+const transactionValidator = {
+  checkOut: [
+    body("user")
+      .notEmpty()
+      .withMessage("User ID is required")
+      .isMongoId()
+      .withMessage("User ID must be a valid MongoDB ID"),
+
+    body("cart")
+      .notEmpty()
+      .withMessage("Cart ID is required")
+      .isMongoId()
+      .withMessage("Cart ID must be a valid MongoDB ID"),
+  ],
+  viewTransaction: [
+    body("transaction")
+      .notEmpty()
+      .withMessage("Transaction ID is required")
+      .isMongoId()
+      .withMessage("Transaction ID must be a valid MongoDB ID"),
+
+    body("user")
+      .notEmpty()
+      .withMessage("User ID is required")
+      .isMongoId()
+      .withMessage("User ID must be a valid MongoDB ID"),
+  ],
+};
+module.exports = {
+  bookValidator,
+  authValidator,
+  userValidator,
+  cartValidator,
+  reviewValidator,
+  transactionValidator,
+};

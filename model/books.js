@@ -33,12 +33,12 @@ const bookSchema = new mongoose.Schema(
       min: 0,
       max: 100,
     },
-    discountStartsDate: {
-      type: Date,
+    discountStartTime: {
+      type: String,
       require: false,
     },
-    discountEndsDate: {
-      type: Date,
+    discountEndTime: {
+      type: String,
       require: false,
     },
     language: [
@@ -57,6 +57,7 @@ const bookSchema = new mongoose.Schema(
     },
     bestSeller: {
       type: Boolean,
+      default: false,
       require: false,
     },
     stock: {

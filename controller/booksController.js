@@ -1,60 +1,90 @@
+const path = require("path");
+const fs = require("fs");
+const schedule = require("node-schedule");
+const cron = require("node-cron");
 const { validationResult } = require("express-validator");
 const { sendResponse } = require("../common/common");
 const HTTP_STATUS = require("../constants/statusCode");
 const BookModel = require("../model/books");
-
+const logFilePath = path.join(__dirname, "../server", "admin_log.log");
+const logFileSearch = path.join(__dirname, "../server", "search_bar.log");
+const logFileUser = path.join(__dirname, "../server", "user_log.log");
+function writeToLog(Path, logEntry) {
+  let logFile = Path;
+  fs.appendFile(logFile, logEntry + "\n", (err) => {
+    if (err) {
+      console.error(`Error writing to log file: ${err}`);
+    }
+  });
+}
 class Book {
   async create(req, res) {
-    const validation = validationResult(req).array();
-    if (validation.length > 0) {
+    try {
+      const validation = validationResult(req).array();
+      if (validation.length > 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "Failed to add book to the store",
+          validation
+        );
+      }
+      const {
+        title,
+        author,
+        ISBN,
+        genre,
+        price,
+        language,
+        pageCount,
+        availability,
+        bestSeller,
+        stock,
+      } = req.body;
+      const defaultReview = "Be the first to add a review for this book";
+      const exisitingBook = await BookModel.findOne({ ISBN: ISBN });
+      if (exisitingBook) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "The book is already  in the store",
+          validation
+        );
+      }
+      const books = await BookModel.create({
+        title: title,
+        author: author,
+        ISBN: ISBN,
+        genre: genre,
+        price: price,
+        language: language,
+        pageCount: pageCount,
+        availability: availability,
+        bestSeller: bestSeller,
+        stock: stock,
+        reviews: [{ reviewContent: defaultReview }],
+      });
+      if (books) {
+        const logMessage = `Time:${new Date()} |success|URL: ${req.hostname}${
+          req.port ? ":" + req.port : ""
+        }${req.originalUrl}`;
+        writeToLog(logFilePath, logMessage);
+        return sendResponse(
+          res,
+          HTTP_STATUS.OK,
+          "Successfully Books Added!",
+          books
+        );
+      }
+    } catch (error) {
+      const logMessage = `Time:${new Date()} |failed|URL: ${req.hostname}${
+        req.port ? ":" + req.port : ""
+      }${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFilePath, logMessage);
       return sendResponse(
         res,
-        HTTP_STATUS.UNPROCESSABLE_ENTITY,
-        "Failed to add book to the store",
-        validation
-      );
-    }
-    const {
-      title,
-      author,
-      ISBN,
-      genre,
-      price,
-      language,
-      pageCount,
-      availability,
-      bestSeller,
-      stock,
-    } = req.body;
-    const defaultReview = "Be the first to add a review for this book";
-    const exisitingBook = await BookModel.findOne({ ISBN: ISBN });
-    if (exisitingBook) {
-      return sendResponse(
-        res,
-        HTTP_STATUS.UNPROCESSABLE_ENTITY,
-        "The book is already  in the store",
-        validation
-      );
-    }
-    const books = await BookModel.create({
-      title: title,
-      author: author,
-      ISBN: ISBN,
-      genre: genre,
-      price: price,
-      language: language,
-      pageCount: pageCount,
-      availability: availability,
-      bestSeller: bestSeller,
-      stock: stock,
-      reviews: [{ reviewContent: defaultReview }],
-    });
-    if (books) {
-      return sendResponse(
-        res,
-        HTTP_STATUS.OK,
-        "Successfully Books Added!",
-        books
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal Server error!"
       );
     }
   }
@@ -63,6 +93,10 @@ class Book {
       const getBooks = await BookModel.find({}).limit(10);
       const totalBooks = await BookModel.count();
       if (getBooks.length > 0) {
+        const logMessage = `Time: ${new Date()} |success Message: Successfully received all books!|URL: ${
+          req.hostname
+        }${req.port ? ":" + req.port : ""}${req.originalUrl}`;
+        writeToLog(logFileSearch, logMessage);
         return sendResponse(
           res,
           HTTP_STATUS.FOUND,
@@ -77,7 +111,10 @@ class Book {
 
       return sendResponse(res, HTTP_STATUS.NOT_FOUND, "No Books Found!");
     } catch (error) {
-      console.log(error);
+      const logMessage = `Time:${new Date()} |failed Message:Internal Server Error...|URL: ${
+        req.hostname
+      }${req.port ? ":" + req.port : ""}${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFileSearch, logMessage);
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -115,9 +152,37 @@ class Book {
         bestSeller,
         stock,
         rating,
+        fill,
+        search,
       } = req.query;
       const filter = {};
-
+      const tracedrating = rating;
+      const traceprice = price;
+      //filtering
+      if (rating !== undefined && fill !== undefined) {
+        filter.rating =
+          fill === "high" ? { $gte: tracedrating } : { $lte: tracedrating };
+      } else {
+        filter.rating = tracedrating;
+      }
+      if (price !== undefined && fill !== undefined) {
+        filter.price =
+          fillPrice === "high" ? { $gte: traceprice } : { $lte: traceprice };
+      } else {
+        filter.price = traceprice;
+      }
+      if (stock !== undefined && fill !== undefined) {
+        filter.stock = fill === "high" ? { $gte: stock } : { $lte: stock };
+      } else {
+        filter.stock = stock;
+      }
+      if (pageCount !== undefined && fill !== undefined) {
+        filter.pageCount =
+          fill === "high" ? { $gte: pageCount } : { $lte: pageCount };
+      } else {
+        filter.pageCount = pageCount;
+      }
+      //particular field wise search
       if (availability !== undefined) {
         filter.availability = { $regex: availability, $option: "i" };
       }
@@ -136,6 +201,7 @@ class Book {
       if (language !== undefined) {
         filter.genre = { $regex: language, $options: "i" };
       }
+      //general search
       if (search !== undefined) {
         filter.$or = [
           { title: { $regex: search, $options: "i" } },
@@ -146,23 +212,38 @@ class Book {
       const getBooks = await BookModel.find(filter)
         .skip(skip)
         .limit(productLimit)
-        .sort({ [sortparam]: sortorder });
+        .sort({ [sortparam]: sortorder }); //sorting
       const totalBooks = await BookModel.count(filter);
+
       if (getBooks.length > 0) {
+        const logMessage = `Time: ${new Date()} |success Message: Successfully received all books!|URL: ${
+          req.hostname
+        }${req.port ? ":" + req.port : ""}${req.originalUrl}`;
+        writeToLog(logFileSearch, logMessage);
+
         return sendResponse(
           res,
           HTTP_STATUS.FOUND,
           "Successfully received the books!",
           {
-            totalBooks: totalBooks,
+            TotalBooks: totalBooks,
             countPerPage: getBooks.length,
             result: getBooks,
           }
         );
       }
+      const logMessage = `Time:${new Date()} |failed Message:No Books Found! |URL: ${
+        req.hostname
+      }${req.port ? ":" + req.port : ""}${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFilePath, logMessage);
 
       return sendResponse(res, HTTP_STATUS.NOT_FOUND, "No Books Found!");
     } catch (error) {
+      const logMessage = `Time:${new Date()} |failed Message: Internal Server Error...|URL: ${
+        req.hostname
+      }${req.port ? ":" + req.port : ""}${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFilePath, logMessage);
+      //console.log(error);
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -171,8 +252,18 @@ class Book {
     }
   }
   async deleteBooks(req, res) {
-    const { bookID } = req.body;
+    const validation = validationResult(req).array();
+    if (validation.length > 0) {
+      return sendResponse(
+        res,
+        HTTP_STATUS.UNPROCESSABLE_ENTITY,
+        "Failed to Delete...",
+        validation
+      );
+    }
+
     try {
+      const { bookID } = req.body;
       const deleteItemResult = await BookModel.deleteMany({
         _id: { $in: bookID },
       });
@@ -182,6 +273,11 @@ class Book {
         return sendResponse(res, HTTP_STATUS.NOT_FOUND, "Book/s not found!");
       }
     } catch (error) {
+      const logMessage = `Time:${new Date()} |failed Message: Internal Server Error...|URL: ${
+        req.hostname
+      }${req.port ? ":" + req.port : ""}${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFilePath, logMessage);
+
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -230,6 +326,12 @@ class Book {
           result: updatedBook,
         });
       } else {
+        const logMessage = `Time:${new Date()} |failed:Failed to update information!"|URL: ${
+          req.hostname
+        }${req.port ? ":" + req.port : ""}${
+          req.originalUrl
+        }| [error: ${error}]`;
+        writeToLog(logFilePath, logMessage);
         return sendResponse(
           res,
           HTTP_STATUS.FAILED_DEPENDENCY,
@@ -238,10 +340,145 @@ class Book {
       }
     } catch (error) {
       console.log(error);
+      const logMessage = `Time:${new Date()} |failed|URL: ${req.hostname}${
+        req.port ? ":" + req.port : ""
+      }${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFilePath, logMessage);
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,
         "Internal Server Error!"
+      );
+    }
+  }
+  async addDiscount(req, res) {
+    try {
+      const validation = validationResult(req).array();
+      if (validation.length > 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "Failed to add discount!",
+          validation
+        );
+      }
+      const { bookID, discountPercentage, discountStartTime, discountEndTime } =
+        req.body;
+      const checkBookExists = await BookModel.find({ _id: bookID });
+      if (!checkBookExists) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "No book found with this id!"
+        );
+      }
+      cron.schedule("0 0 * * *", async () => {
+        // Calculate the current time in HH:mm format
+        const currentTime = new Date().toLocaleTimeString("en-US", {
+          hour12: false,
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        await Book.updateMany(
+          {
+            discountEndTime: { $lte: currentTime },
+          },
+          {
+            $unset: {
+              discountPercentage: 1,
+              discountStartTime: 1,
+              discountEndTime: 1,
+            },
+          }
+        );
+        console.log("Expired discounts removed.");
+      });
+      const book = await BookModel.findByIdAndUpdate(
+        bookID,
+        {
+          discountPercentage,
+          discountStartTime,
+          discountEndTime,
+        },
+        { new: true }
+      );
+
+      console.log(book);
+      return sendResponse(res, HTTP_STATUS.OK, "Discount added Successfully");
+    } catch (error) {
+      console.log(error);
+      const logMessage = `Time:${new Date()} |failed|URL: ${req.hostname}${
+        req.port ? ":" + req.port : ""
+      }${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logMessage);
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal Server Error!"
+      );
+    }
+  }
+  async updateDiscount(req, res) {
+    try {
+      const validation = validationResult(req).array();
+      if (validation.length > 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "Failed to update discount!",
+          validation
+        );
+      }
+      const { bookID } = req.params;
+      const { discountPercentage, discountStartTime, discountEndTime } =
+        req.body;
+      const checkBookExists = await BookModel.findById({ _id: bookID });
+      if (!checkBookExists) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "No book found with this id!"
+        );
+      }
+
+      if (!checkBookExists.discountPercentage) {
+        const logMessage = `Time:${new Date()} |failed Message:No existing discountPercentage for this|URL: ${
+          req.hostname
+        }${req.port ? ":" + req.port : ""}${
+          req.originalUrl
+        }| [error: ${error}]`;
+        writeToLog(logFileUser, logMessage);
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "No existing discountPercentage for this "
+        );
+      }
+
+      checkBookExists.discountPercentage = discountPercentage;
+      checkBookExists.discountStartTime = discountStartTime;
+      checkBookExists.discountEndTime = discountEndTime;
+      await checkBookExists.save();
+      const logMessage = `Time: ${new Date()} |success:Successfully updated the discount for the book!|URL: ${
+        req.hostname
+      }${req.port ? ":" + req.port : ""}${req.originalUrl}`;
+      writeToLog(logFileUser, logMessage);
+      return sendResponse(
+        res,
+        HTTP_STATUS.OK,
+        "Successfully updated the discount for the book!"
+      );
+    } catch (error) {
+      console.log(error);
+      const logMessage = `Time:${new Date()} |failed Message:Internal Server Error...|URL: ${
+        req.hostname
+      }${req.port ? ":" + req.port : ""}${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFileUser, logMessage);
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal Server Error..."
       );
     }
   }

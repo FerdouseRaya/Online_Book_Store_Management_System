@@ -1,10 +1,19 @@
+const path = require("path");
+const fs = require("fs");
 const { validationResult } = require("express-validator");
 const { sendResponse } = require("../common/common");
 const HTTP_STATUS = require("../constants/statusCode");
 const CartModel = require("../model/carts");
 const UserModel = require("../model/users");
 const BookModel = require("../model/books");
-
+function writeToLog(Path, logEntry) {
+  let logFile = Path;
+  fs.appendFile(logFile, logEntry + "\n", (err) => {
+    if (err) {
+      console.error(`Error writing to log file: ${err}`);
+    }
+  });
+}
 class Cart {
   async addtoCart(req, res) {
     try {
@@ -33,6 +42,7 @@ class Cart {
           user: userID,
           books: [],
           Total: 0,
+          TotalDiscountPercentage: 0,
         });
       }
       // Find the selected book
@@ -47,16 +57,42 @@ class Cart {
         if (!bookInfo) {
           return sendResponse(res, HTTP_STATUS.NOT_FOUND, "Book not found!");
         }
+        let bookPrice = bookInfo.price;
+        if (
+          bookInfo.discountPercentage &&
+          bookInfo.discountStartTime &&
+          bookInfo.discountEndTime
+        ) {
+          const currentTime = new Date().toLocaleTimeString("en-US", {
+            hour12: false,
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          if (
+            currentTime >= bookInfo.discountStartTime &&
+            currentTime <= bookInfo.discountEndTime
+          ) {
+            bookPrice =
+              bookPrice - (bookPrice * bookInfo.discountPercentage) / 100;
+          }
+          if (bookInfo.stock < quantity) {
+            return sendResponse(
+              res,
+              HTTP_STATUS.UNPROCESSABLE_ENTITY,
+              "Not enough books are in the stock."
+            );
+          }
 
-        if (bookInfo.stock < quantity) {
-          return sendResponse(
-            res,
-            HTTP_STATUS.UNPROCESSABLE_ENTITY,
-            "Not enough books are in the stock."
-          );
+          cartItem.books.push({
+            book: book,
+            quantity: quantity,
+            Total: bookPrice,
+          });
+          cartItem.discountPercentage += bookInfo.discountPercentage || 0;
+        } else {
+          selectedBook.quantity += quantity;
+          cartItem.TotalDiscountPercentage += bookInfo.discountPercentage || 0;
         }
-
-        cartItem.books.push({ book: book, quantity: quantity });
       } else {
         const bookInfo = await BookModel.findById(selectedBook.book);
         if (bookInfo.stock < selectedBook.quantity + quantity) {
@@ -101,6 +137,15 @@ class Cart {
   }
   async viewCart(req, res) {
     try {
+      const validation = validationResult(req).array();
+      if (validation.length > 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "Failed to add the User!",
+          validation
+        );
+      }
       const { userID } = req.body;
       const user = await UserModel.findById({ _id: userID });
       if (!user) {
@@ -134,12 +179,21 @@ class Cart {
   }
   async removefromCart(req, res) {
     try {
+      const validation = validationResult(req).array();
+      if (validation.length > 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "Failed to add the User!",
+          validation
+        );
+      }
       const { userID, book, quantity } = req.body;
       // Check if the user exists
-      const user = await UserModel.findById(userID);
-      if (!user) {
-        return sendResponse(res, HTTP_STATUS.NOT_FOUND, "User not found!");
-      }
+      // const user = await UserModel.findById(userID);
+      // if (!user) {
+      //   return sendResponse(res, HTTP_STATUS.NOT_FOUND, "User not found!");
+      // }
 
       // Find the user's cart
       let cartItem = await CartModel.findOne({ user: userID });

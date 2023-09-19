@@ -18,6 +18,7 @@ routes.delete(
   "/deleteuser",
   isAuthenticated,
   isAdmin,
+  userValidator.deleteUser,
   userController.deleteUser
 );
 routes.get("/viewUsers", isAuthenticated, isAdmin, userController.viewUsers);
@@ -25,6 +26,7 @@ routes.patch(
   "/editUsersInfo",
   isAuthenticated,
   isAdmin,
+  userValidator.editInformation,
   userController.editInformation
 );
 routes.patch(

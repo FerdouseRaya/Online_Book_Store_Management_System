@@ -3,12 +3,21 @@ const routes = express();
 const cartController = require("../controller/cartsController");
 const { cartValidator } = require("../middleware/validation");
 const {
-  isAuthenticated,
-  isAdmin,
+  isUserandVerified,
 } = require("../middleware/authentication_authorization");
 
-routes.post("/addtoCart", cartValidator.addtoCart, cartController.addtoCart);
-routes.get("/viewCart", cartController.viewCart);
-routes.delete("/removefromCart", cartController.removefromCart);
+routes.post(
+  "/addtoCart",
+  isUserandVerified,
+  cartValidator.addtoCart,
+  cartController.addtoCart
+);
+routes.get("/viewCart", isUserandVerified, cartController.viewCart);
+routes.delete(
+  "/removefromCart",
+  isUserandVerified,
+  cartValidator.removefromCart,
+  cartController.removefromCart
+);
 
 module.exports = routes;

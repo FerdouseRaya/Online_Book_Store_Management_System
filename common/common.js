@@ -9,7 +9,7 @@ const sendResponse = (res, status, message, result = null) => {
     response.message = "Internal Server Error";
   } else {
     response.success = true;
-    response.error = result;
+    response.result = result;
     response.message = "Successfully completed the operations.";
   }
 

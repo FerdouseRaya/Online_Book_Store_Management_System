@@ -1,0 +1,16 @@
+
+Time:Tue Sep 19 2023 13:47:36 GMT+0600 (Bangladesh Standard Time) |failed Message: Internal Server Error...|URL: 127.0.0.1/books/viewBySearch| [error: ReferenceError: search is not defined]
+Time:Tue Sep 19 2023 13:48:34 GMT+0600 (Bangladesh Standard Time) |failed Message: Internal Server Error...|URL: 127.0.0.1/books/viewBySearch| [error: ReferenceError: search is not defined]
+Time: Tue Sep 19 2023 13:49:32 GMT+0600 (Bangladesh Standard Time) |success:Successfully received the books!|URL: 127.0.0.1/books/viewBySearch
+Time: Tue Sep 19 2023 13:51:55 GMT+0600 (Bangladesh Standard Time) |success:Successfully received the books!|URL: 127.0.0.1/books/viewBySearch
+Time:Tue Sep 19 2023 16:10:14 GMT+0600 (Bangladesh Standard Time) |success|URL: 127.0.0.1/books/create
+Time:Tue Sep 19 2023 17:09:32 GMT+0600 (Bangladesh Standard Time) |success|URL: 127.0.0.1/books/create
+Time:Tue Sep 19 2023 17:17:58 GMT+0600 (Bangladesh Standard Time) |success|URL: 127.0.0.1/books/create
+Time: Tue Sep 19 2023 19:29:17 GMT+0600 (Bangladesh Standard Time) |success:Successfully SingedUP!|URL: 127.0.0.1/auth/sign-up
+Time: Tue Sep 19 2023 19:52:59 GMT+0600 (Bangladesh Standard Time) |success:Successfully SingedUP!|URL: 127.0.0.1/auth/sign-up
+Time: Tue Sep 19 2023 19:58:17 GMT+0600 (Bangladesh Standard Time) |success:Successfully SingedUP!|URL: 127.0.0.1/auth/sign-up
+Time: Tue Sep 19 2023 19:59:04 GMT+0600 (Bangladesh Standard Time) |success:Successfully SingedUP!|URL: 127.0.0.1/auth/sign-up
+Time:Tue Sep 19 2023 20:04:40 GMT+0600 (Bangladesh Standard Time) |failed Message:Authentication Error...|URL: 127.0.0.1/auth/login| [error: ReferenceError: error is not defined]
+Time:Tue Sep 19 2023 20:06:43 GMT+0600 (Bangladesh Standard Time) |failed Message:Authentication Error...|URL: 127.0.0.1/auth/login| [error: ReferenceError: error is not defined]
+Time: Tue Sep 19 2023 20:08:55 GMT+0600 (Bangladesh Standard Time) |success:Successfully SingedUP!|URL: 127.0.0.1/auth/sign-up
+Time: Tue Sep 19 2023 20:09:05 GMT+0600 (Bangladesh Standard Time) |success:Successfully logged in..."!|URL: 127.0.0.1/auth/login
