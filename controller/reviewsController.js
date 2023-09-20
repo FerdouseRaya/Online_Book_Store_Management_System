@@ -8,12 +8,20 @@ const UserModel = require("../model/users");
 const BookModel = require("../model/books");
 const HTTP_STATUS = require("../constants/statusCode");
 const { sendResponse } = require("../common/common");
-
+const logFileUser = path.join(__dirname, "../server", "user_log.log");
 class Review {
   async addReviewandRating(req, res) {
-    const { user, book, review, rating } = req.body;
-
     try {
+      const validation = validationResult(req).array();
+      if (validation.length > 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "Failed to add book to the store",
+          validation
+        );
+      }
+      const { user, book, review, rating } = req.body;
       const existingReview = await ReviewModel.findOne({
         user: user,
         book: book,
@@ -51,7 +59,7 @@ class Review {
 
       const bookReviews = await ReviewModel.find({ book: book });
       if (bookReviews.length === 1) {
-        // This is the first review, so overwrite the default review
+        //  overwrite the default review
         const updatedBook = await BookModel.findByIdAndUpdate(
           book,
           {
@@ -110,6 +118,15 @@ class Review {
   }
   async updateReviewandRating(req, res) {
     try {
+      const validation = validationResult(req).array();
+      if (validation.length > 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "Failed to add book to the store",
+          validation
+        );
+      }
       const { user, bookID, reviewID, reviews, rating } = req.body;
       const existingReview = await ReviewModel.findById({ _id: reviewID });
       if (!existingReview) {
@@ -151,6 +168,10 @@ class Review {
       );
     } catch (error) {
       console.log(error);
+      const logMessage = `Time:${new Date()} |failed|URL: ${req.hostname}${
+        req.port ? ":" + req.port : ""
+      }${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFileUser, logMessage);
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -159,55 +180,86 @@ class Review {
     }
   }
   async removeReviewandRating(req, res) {
-    const { user, bookID, reviewID } = req.body;
-    const review = await ReviewModel.findById(reviewID);
-    if (!review) {
+    try {
+      const validation = validationResult(req).array();
+      if (validation.length > 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "Failed to add book to the store",
+          validation
+        );
+      }
+      const { user, bookID, reviewID } = req.body;
+      const review = await ReviewModel.findById(reviewID);
+      if (!review) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Review does not exists!"
+        );
+      }
+
+      if (review.user.toString() !== user) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNAUTHORIZED,
+          "Unauthorized User, You can not delete the review."
+        );
+      }
+
+      const checkBook = await BookModel.findById(bookID);
+      if (!checkBook) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Associated Book not found!"
+        );
+      }
+
+      await ReviewModel.findByIdAndDelete(reviewID);
+      await BookModel.findByIdAndUpdate(
+        review.book,
+        {
+          $pull: { reviews: { reviewId: review._id } },
+        },
+        { new: true }
+      );
+      const bookReviews = await ReviewModel.find({ book: bookID });
+      const totalRating = bookReviews.reduce(
+        (sum, review) => sum + review.rating,
+        0
+      );
+      const newRating =
+        bookReviews.length > 0 ? totalRating / bookReviews.length : 0;
+
+      // Update the book's rating with the new average rating
+      await BookModel.findByIdAndUpdate(bookID, { rating: newRating });
+      return sendResponse(res, HTTP_STATUS.OK, "Review Deleted Successfull");
+    } catch (error) {
+      console.log(error);
+      const logMessage = `Time:${new Date()} |failed|URL: ${req.hostname}${
+        req.port ? ":" + req.port : ""
+      }${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFileUser, logMessage);
       return sendResponse(
         res,
-        HTTP_STATUS.NOT_FOUND,
-        "Review does not exists!"
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal Server Error.."
       );
     }
-
-    if (review.user.toString() !== user) {
-      return sendResponse(
-        res,
-        HTTP_STATUS.UNAUTHORIZED,
-        "Unauthorized User, You can not delete the review."
-      );
-    }
-
-    const checkBook = await BookModel.findById(bookID);
-    if (!checkBook) {
-      return sendResponse(
-        res,
-        HTTP_STATUS.NOT_FOUND,
-        "Associated Book not found!"
-      );
-    }
-
-    await ReviewModel.findByIdAndDelete(reviewID);
-    await BookModel.findByIdAndUpdate(
-      review.book,
-      {
-        $pull: { reviews: { reviewId: review._id } },
-      },
-      { new: true }
-    );
-    const bookReviews = await ReviewModel.find({ book: bookID });
-    const totalRating = bookReviews.reduce(
-      (sum, review) => sum + review.rating,
-      0
-    );
-    const newRating =
-      bookReviews.length > 0 ? totalRating / bookReviews.length : 0;
-
-    // Update the book's rating with the new average rating
-    await BookModel.findByIdAndUpdate(bookID, { rating: newRating });
-    return sendResponse(res, HTTP_STATUS.OK, "Review Deleted Successfull");
   }
   async viewAverageRating(req, res) {
     try {
+      const validation = validationResult(req).array();
+      if (validation.length > 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "Failed to add book to the store",
+          validation
+        );
+      }
       const { bookID } = req.params;
       const book = await BookModel.findById(bookID);
 
@@ -238,8 +290,11 @@ class Review {
         }
       );
     } catch (error) {
-      console.error(error);
-
+      //console.error(error);
+      const logMessage = `Time:${new Date()} |failed|URL: ${req.hostname}${
+        req.port ? ":" + req.port : ""
+      }${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFileUser, logMessage);
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,

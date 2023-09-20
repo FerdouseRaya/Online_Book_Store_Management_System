@@ -82,6 +82,7 @@ class Book {
       );
     }
   }
+
   async viewall(req, res) {
     try {
       const getBooks = await BookModel.find({}).limit(10);
@@ -229,7 +230,7 @@ class Book {
       const logMessage = `Time:${new Date()} |failed Message:No Books Found! |URL: ${
         req.hostname
       }${req.port ? ":" + req.port : ""}${req.originalUrl}| [error: ${error}]`;
-      writeToLog(logFilePath, logMessage);
+      writeToLog(logFileSearch, logMessage);
 
       return sendResponse(res, HTTP_STATUS.NOT_FOUND, "No Books Found!");
     } catch (error) {

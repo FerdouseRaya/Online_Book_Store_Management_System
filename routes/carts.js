@@ -12,7 +12,7 @@ routes.post(
   cartValidator.addtoCart,
   cartController.addtoCart
 );
-routes.get("/viewCart", cartController.viewCart);
+routes.get("/viewCart", isUserandVerified, cartController.viewCart);
 routes.delete(
   "/removefromCart",
   isUserandVerified,
