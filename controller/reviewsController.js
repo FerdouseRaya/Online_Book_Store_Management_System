@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const { writeToLog } = require("../middleware/log");
 const mongoose = require("mongoose");
 const { validationResult } = require("express-validator");
 const ReviewModel = require("../model/reviews");
@@ -49,49 +50,54 @@ class Review {
       const savedReview = await newReview.save();
 
       const bookReviews = await ReviewModel.find({ book: book });
-      const totalRatings = bookReviews.reduce(
-        (total, review) => total + review.rating,
-        0
-      );
-      const averageRating =
-        bookReviews.length > 0 ? totalRatings / bookReviews.length : 0;
-
-      const bulkOperations = [
-        {
-          updateOne: {
-            filter: { _id: book },
-            update: {
-              $set: {
-                rating: averageRating,
+      if (bookReviews.length === 1) {
+        // This is the first review, so overwrite the default review
+        const updatedBook = await BookModel.findByIdAndUpdate(
+          book,
+          {
+            reviews: [
+              {
+                reviewId: savedReview._id,
+                reviewContent: review,
+                rating: rating,
               },
+            ],
+          },
+          { new: true }
+        );
+
+        return sendResponse(
+          res,
+          HTTP_STATUS.OK,
+          "Review and rating added",
+          updatedBook
+        );
+      } else {
+        // This is not the first review, push the new review
+        await BookModel.findByIdAndUpdate(book, {
+          $push: {
+            reviews: {
+              reviewId: savedReview._id,
+              reviewContent: review,
+              rating: rating,
             },
           },
-        },
-        {
-          updateOne: {
-            filter: { _id: book },
-            update: {
-              $push: {
-                reviews: {
-                  reviewId: savedReview._id,
-                  reviewContent: review,
-                  rating: rating,
-                },
-              },
-            },
-          },
-        },
-      ];
+        });
 
-      await BookModel.bulkWrite(bulkOperations);
+        const totalRatings = bookReviews.reduce(
+          (total, review) => total + review.rating,
+          0
+        );
+        const averageRating =
+          bookReviews.length > 0 ? totalRatings / bookReviews.length : 0;
 
-      const reviewUpdated = await BookModel.findById(book);
-      return sendResponse(
-        res,
-        HTTP_STATUS.OK,
-        "Review and rating added",
-        reviewUpdated
-      );
+        await BookModel.findByIdAndUpdate(book, {
+          rating: averageRating,
+        });
+
+        const reviewUpdated = await BookModel.findById(book);
+        return sendResponse(res, HTTP_STATUS.OK, "Review and rating added");
+      }
     } catch (error) {
       console.error(error);
 
@@ -200,7 +206,7 @@ class Review {
     await BookModel.findByIdAndUpdate(bookID, { rating: newRating });
     return sendResponse(res, HTTP_STATUS.OK, "Review Deleted Successfull");
   }
-  async viewReviewandRating(req, res) {
+  async viewAverageRating(req, res) {
     try {
       const { bookID } = req.params;
       const book = await BookModel.findById(bookID);
@@ -209,7 +215,9 @@ class Review {
         return sendResponse(res, HTTP_STATUS.NOT_FOUND, "Book not found!");
       }
 
-      const bookReviews = await ReviewModel.find({ book: bookID });
+      const bookReviews = await ReviewModel.find({ book: bookID }).select(
+        "user reviews rating"
+      ); // Specify the fields you want to select
 
       // Calculating the average rating for the book
       const totalRating = bookReviews.reduce(
@@ -222,7 +230,7 @@ class Review {
       return sendResponse(
         res,
         HTTP_STATUS.OK,
-        "Successfully reviewd the book!",
+        "Successfully reviewed the book!",
         {
           bookTitle: book.title,
           averageRating: averageRating,
@@ -231,6 +239,7 @@ class Review {
       );
     } catch (error) {
       console.error(error);
+
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,

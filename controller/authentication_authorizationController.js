@@ -4,19 +4,11 @@ const { validationResult } = require("express-validator");
 const bcrypt = require("bcrypt");
 const jsonwebtoken = require("jsonwebtoken");
 const { sendResponse } = require("../common/common");
+const { writeToLog } = require("../middleware/log");
 const HTTP_STATUS = require("../constants/statusCode");
 const AuthModel = require("../model/authentication_authorization");
 const UserModel = require("../model/users");
 const logFilePath = path.join(__dirname, "../server", "admin_log.log");
-
-function writeToLog(Path, logEntry) {
-  let logFile = Path;
-  fs.appendFile(logFile, logEntry + "\n", (err) => {
-    if (err) {
-      console.error(`Error writing to log file: ${err}`);
-    }
-  });
-}
 
 class Auth {
   async login(req, res) {
@@ -32,8 +24,12 @@ class Auth {
       }
       const { email, password } = req.body;
       const authorizedUser = await AuthModel.findOne({ email: email })
-        .populate("user", "-createdAt -updatedAt")
-        .select("-id -name -email -address -createdAt -updatedAt");
+        .select("-_id -address -createdAt -updatedAt -id")
+        .populate(
+          "user",
+          "-_id -role -address -wallets_balance -createdAt -updatedAt -__v"
+        );
+
       if (!authorizedUser) {
         return sendResponse(
           res,
@@ -161,14 +157,6 @@ class Auth {
         email: email,
         password: hasedPassword,
         role: role,
-        phone: phone,
-        address: {
-          house: address.house,
-          road: address.road,
-          area: address.area,
-          city: address.city,
-          country: address.country,
-        },
         verified: verified,
         user: savedUser._id,
       });
@@ -195,7 +183,7 @@ class Auth {
         res,
         HTTP_STATUS.OK,
         "Successfully SingedUP!",
-        authUser
+        savedUser
       );
     } catch (error) {
       const logMessage = `Time:${new Date()} |failed:Internal Server Error...|URL: ${

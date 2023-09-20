@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const { writeToLog } = require("../middleware/log");
 const schedule = require("node-schedule");
 const { validationResult } = require("express-validator");
 const { sendResponse } = require("../common/common");
@@ -8,6 +9,7 @@ const CartModel = require("../model/carts");
 const UserModel = require("../model/users");
 const transactionModel = require("../model/transactions");
 const logFilePath = path.join(__dirname, "../server", "user_log,log");
+const logFileUser = path.join(__dirname, "../server", "user_log.log");
 
 // Helper function to check if the discount is active
 function isDiscountActive(startTime, endTime, currentTime) {
@@ -29,14 +31,6 @@ function isDiscountActive(startTime, endTime, currentTime) {
   }
 
   return false;
-}
-function writeToLog(Path, logEntry) {
-  let logFile = Path;
-  fs.appendFile(logFile, logEntry + "\n", (err) => {
-    if (err) {
-      console.error(`Error writing to log file: ${err}`);
-    }
-  });
 }
 class transaction {
   async checkOut(req, res) {
@@ -125,7 +119,6 @@ class transaction {
         cart: cartItem._id,
         user,
         books: transactionItems,
-        discountPercentage: discountPercentage,
         Total: total,
       });
 
@@ -144,6 +137,7 @@ class transaction {
         ),
       });
     } catch (error) {
+      console.log(error);
       const logMessage = `Time:${new Date()} |failed Message: Internal Server Error.|URL: ${
         req.hostname
       }${req.port ? ":" + req.port : ""}${req.originalUrl}| [error: ${error}]`;
@@ -172,9 +166,12 @@ class transaction {
           _id: transaction,
           user: user,
         })
-        .populate("user", "name email phone wallets_balance")
-        .populate("books.book", "-_id title author price rating reviews")
-        .select("-__v");
+        .populate("user", "-_id name email phone wallets_balance")
+        .populate(
+          "books.book",
+          "-_id -genre -pageCount -availability -bestSeller -rating -reviews -createdAt -updatedAt -__v"
+        )
+        .select("-__v -createdAt -updatedAt");
       console.log(transactionItem);
       if (!transactionItem) {
         return sendResponse(
@@ -191,6 +188,10 @@ class transaction {
       );
     } catch (error) {
       console.log(error);
+      const logMessage = `Time:${new Date()} |failed|URL: ${req.hostname}${
+        req.port ? ":" + req.port : ""
+      }${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFileUser, logMessage);
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -210,10 +211,13 @@ class transaction {
         );
       }
       const allTransactions = await transactionModel
-        .find()
-        .populate("user", "-id name email phone wallets_balance")
-        .populate("books.book", "-_id title author price rating reviews")
-        .select("-__v");
+        .find({})
+        .populate("user", "-_id name email phone wallets_balance")
+        .populate(
+          "books.book",
+          "-_id -genre -pageCount -availability -bestSeller -rating -reviews -createdAt -updatedAt -__v"
+        )
+        .select("-__v -createdAt -updatedAt");
 
       if (!allTransactions && allTransactions === 0) {
         return sendResponse(
@@ -231,6 +235,10 @@ class transaction {
       );
     } catch (error) {
       console.log(error);
+      const logMessage = `Time:${new Date()} |failed|URL: ${req.hostname}${
+        req.port ? ":" + req.port : ""
+      }${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFilePath, logMessage);
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,

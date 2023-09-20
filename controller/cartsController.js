@@ -1,19 +1,14 @@
 const path = require("path");
 const fs = require("fs");
+const { writeToLog } = require("../middleware/log");
 const { validationResult } = require("express-validator");
 const { sendResponse } = require("../common/common");
 const HTTP_STATUS = require("../constants/statusCode");
 const CartModel = require("../model/carts");
 const UserModel = require("../model/users");
 const BookModel = require("../model/books");
-function writeToLog(Path, logEntry) {
-  let logFile = Path;
-  fs.appendFile(logFile, logEntry + "\n", (err) => {
-    if (err) {
-      console.error(`Error writing to log file: ${err}`);
-    }
-  });
-}
+const logFileUser = path.join(__dirname, "../server", "user_log.log");
+
 class Cart {
   async addtoCart(req, res) {
     try {
@@ -128,6 +123,10 @@ class Cart {
       );
     } catch (error) {
       console.log(error);
+      const logMessage = `Time:${new Date()} |failed|URL: ${req.hostname}${
+        req.port ? ":" + req.port : ""
+      }${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFileUser, logMessage);
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -170,6 +169,10 @@ class Cart {
       );
     } catch (error) {
       console.log(error);
+      const logMessage = `Time:${new Date()} |failed|URL: ${req.hostname}${
+        req.port ? ":" + req.port : ""
+      }${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFileUser, logMessage);
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -244,6 +247,10 @@ class Cart {
       );
     } catch (error) {
       console.error(error);
+      const logMessage = `Time:${new Date()} |failed|URL: ${req.hostname}${
+        req.port ? ":" + req.port : ""
+      }${req.originalUrl}| [error: ${error}]`;
+      writeToLog(logFileUser, logMessage);
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,

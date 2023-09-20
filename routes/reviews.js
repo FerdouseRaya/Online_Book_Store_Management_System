@@ -13,10 +13,9 @@ routes.post(
   reviewController.addReviewandRating
 );
 routes.get(
-  "/viewReviewRating/:bookID",
-  isUserandVerified,
+  "/viewAverageRating/:bookID",
   reviewValidator.viewReviewandRating,
-  reviewController.viewReviewandRating
+  reviewController.viewAverageRating
 );
 routes.patch(
   "/updateReviewandRating",

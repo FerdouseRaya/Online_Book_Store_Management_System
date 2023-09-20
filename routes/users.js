@@ -5,6 +5,7 @@ const { userValidator } = require("../middleware/validation");
 const {
   isAuthenticated,
   isAdmin,
+  isUserandVerified,
 } = require("../middleware/authentication_authorization");
 
 routes.post(

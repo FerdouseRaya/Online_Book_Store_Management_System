@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const { writeToLog } = require("../middleware/log");
 const schedule = require("node-schedule");
 const cron = require("node-cron");
 const { validationResult } = require("express-validator");
@@ -9,14 +10,7 @@ const BookModel = require("../model/books");
 const logFilePath = path.join(__dirname, "../server", "admin_log.log");
 const logFileSearch = path.join(__dirname, "../server", "search_bar.log");
 const logFileUser = path.join(__dirname, "../server", "user_log.log");
-function writeToLog(Path, logEntry) {
-  let logFile = Path;
-  fs.appendFile(logFile, logEntry + "\n", (err) => {
-    if (err) {
-      console.error(`Error writing to log file: ${err}`);
-    }
-  });
-}
+
 class Book {
   async create(req, res) {
     try {
@@ -287,6 +281,15 @@ class Book {
   }
   async editInformation(req, res) {
     try {
+      const validation = validationResult(req).array();
+      if (validation.length > 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "Failed to add book to the store",
+          validation
+        );
+      }
       const { bookID, ...updatedData } = req.body;
       const checkBookExists = await BookModel.find({ _id: bookID });
       if (!checkBookExists) {
@@ -305,6 +308,13 @@ class Book {
           "Don't have the access to edit these fields"
         );
       }
+      if (Object.keys(updatedData).length === 0) {
+        return sendResponse(
+          res,
+          HTTP_STATUS.BAD_REQUEST,
+          "At least one field should be provided for updating"
+        );
+      }
       const filteredData = Object.keys(updatedData).reduce(
         (previousData, index) => {
           if (!excludedFields.includes(index)) {
@@ -321,10 +331,12 @@ class Book {
         { new: true }
       );
       if (updatedBook) {
-        return sendResponse(res, HTTP_STATUS.OK, {
-          message: "Successfully Edited the Book's Information!",
-          result: updatedBook,
-        });
+        return sendResponse(
+          res,
+          HTTP_STATUS.OK,
+          "Successfully Edited the Book's Information!",
+          updatedBook
+        );
       } else {
         const logMessage = `Time:${new Date()} |failed:Failed to update information!"|URL: ${
           req.hostname
