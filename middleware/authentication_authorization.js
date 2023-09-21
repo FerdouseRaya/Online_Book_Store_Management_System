@@ -9,7 +9,7 @@ const isAuthenticated = (req, res, next) => {
       return sendResponse(res, HTTP_STATUS.UNAUTHORIZED, "Not Authorized!");
     }
 
-    const jwtToken = req.headers.authorization.split("")[1];
+    const jwtToken = req.headers.authorization.split(" ")[1];
     const validation = jsonwebtoken.verify(jwtToken, process.env.SECRET_KEY);
     if (validation) {
       next();
@@ -44,9 +44,9 @@ const isAdmin = (req, res, next) => {
       throw new Error();
     }
     if (decodedToken.role === 1) {
-      console.log("Hello");
-      return sendResponse(res, HTTP_STATUS.OK, "Successful Access!");
+      //console.log("Hello");
       next();
+      
     } else {
       return sendResponse(res, HTTP_STATUS.BAD_REQUEST, "Permission Denied!!!");
     }

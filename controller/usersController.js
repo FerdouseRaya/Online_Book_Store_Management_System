@@ -1,6 +1,6 @@
 const path = require("path");
 const fs = require("fs");
-const { writeToLog } = require("../middleware/log");
+const { writeToLog } = require('../middleware/log');
 const { validationResult } = require("express-validator");
 const { sendResponse } = require("../common/common");
 const HTTP_STATUS = require("../constants/statusCode");
@@ -134,7 +134,7 @@ class User {
 
       return sendResponse(res, HTTP_STATUS.NOT_FOUND, "No Users Found!");
     } catch (error) {
-      console.log(error);
+      console.log(error)
       const logMessage = `Time:${new Date()} |failed|URL: ${req.hostname}${
         req.port ? ":" + req.port : ""
       }${req.originalUrl}| [error: ${error}]`;

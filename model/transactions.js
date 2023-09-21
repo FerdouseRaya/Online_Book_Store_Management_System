@@ -24,6 +24,7 @@ const transactionSchema = new mongoose.Schema(
       ],
     },
     Total: Number,
+    discountPercentage: Number,
   },
   { timestamp: true }
 );

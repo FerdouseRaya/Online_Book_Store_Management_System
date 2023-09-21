@@ -4,7 +4,7 @@ const { validationResult } = require("express-validator");
 const bcrypt = require("bcrypt");
 const jsonwebtoken = require("jsonwebtoken");
 const { sendResponse } = require("../common/common");
-const { writeToLog } = require("../middleware/log");
+const { writeToLog } = require('../middleware/log');
 const HTTP_STATUS = require("../constants/statusCode");
 const AuthModel = require("../model/authentication_authorization");
 const UserModel = require("../model/users");
@@ -24,11 +24,8 @@ class Auth {
       }
       const { email, password } = req.body;
       const authorizedUser = await AuthModel.findOne({ email: email })
-        .select("-_id -address -createdAt -updatedAt -id")
-        .populate(
-          "user",
-          "-_id -role -address -wallets_balance -createdAt -updatedAt -__v"
-        );
+      .select("-_id -address -createdAt -updatedAt -id")
+      .populate("user", "-_id -role -address -wallets_balance -createdAt -updatedAt -__v");
 
       if (!authorizedUser) {
         return sendResponse(

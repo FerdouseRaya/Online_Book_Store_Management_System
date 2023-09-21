@@ -82,7 +82,6 @@ class Book {
       );
     }
   }
-
   async viewall(req, res) {
     try {
       const getBooks = await BookModel.find({}).limit(10);
@@ -119,7 +118,7 @@ class Book {
   }
   async viewBySearch(req, res) {
     try {
-      //validation
+      // Validation
       const validation = validationResult(req).array();
       if (validation.length > 0) {
         return sendResponse(
@@ -129,11 +128,13 @@ class Book {
           validation
         );
       }
-      //pagination
-      const page = Number(req.query.page) || 1; //default setting page at 1
-      const productLimit = Number(req.query.limit) || 10; //default setting books per page limit is 10
+
+      // Pagination
+      const page = Number(req.query.page) || 1; // Default to page 1
+      const productLimit = Number(req.query.limit) || 10; // Default limit to 10 items per page
       const skip = (page - 1) * productLimit;
-      //searching,sorting,filtering
+
+      // Search, sorting, and filtering parameters
       const {
         sortparam,
         sortorder,
@@ -150,72 +151,75 @@ class Book {
         fill,
         search,
       } = req.query;
+
       const filter = {};
-      const tracedrating = rating;
-      const traceprice = price;
-      //filtering
-      if (rating !== undefined && fill !== undefined) {
+
+      // Apply filters b
+
+      // Rating filter
+      if (rating && fill) {
         filter.rating =
-          fill === "high" ? { $gte: tracedrating } : { $lte: tracedrating };
-      } else {
-        filter.rating = tracedrating;
+          fill === "high" ? { $gte: Number(rating) } : { $lte: Number(rating) };
       }
-      if (price !== undefined && fill !== undefined) {
+
+      // Price filter
+      if (price && fill) {
         filter.price =
-          fillPrice === "high" ? { $gte: traceprice } : { $lte: traceprice };
-      } else {
-        filter.price = traceprice;
+          fill === "high" ? { $gte: Number(price) } : { $lte: Number(price) };
       }
-      if (stock !== undefined && fill !== undefined) {
-        filter.stock = fill === "high" ? { $gte: stock } : { $lte: stock };
-      } else {
-        filter.stock = stock;
+
+      // Stock filter
+      if (stock && fill) {
+        filter.stock =
+          fill === "high" ? { $gte: Number(stock) } : { $lte: Number(stock) };
       }
-      if (pageCount !== undefined && fill !== undefined) {
+
+      // Page count filter
+      if (pageCount && fill) {
         filter.pageCount =
-          fill === "high" ? { $gte: pageCount } : { $lte: pageCount };
-      } else {
-        filter.pageCount = pageCount;
+          fill === "high"
+            ? { $gte: Number(pageCount) }
+            : { $lte: Number(pageCount) };
       }
-      //particular field wise search
-      if (availability !== undefined) {
-        filter.availability = { $regex: availability, $option: "i" };
+
+      // Availability, Best Seller, ISBN, Author, Genre, Language filters
+      if (availability) {
+        filter.availability = { $regex: new RegExp(availability, "i") };
       }
-      if (bestSeller !== undefined) {
-        filter.bestSeller = { $regex: bestSeller, $option: "i" };
+      if (bestSeller) {
+        filter.bestSeller = { $regex: new RegExp(bestSeller, "i") };
       }
-      if (ISBN !== undefined) {
-        filter.ISBN = { $regex: ISBN, $option: "i" };
+      if (ISBN) {
+        filter.ISBN = { $regex: new RegExp(ISBN, "i") };
       }
-      if (author !== undefined) {
-        filter.author = { $regex: author, $options: "i" };
+      if (author) {
+        filter.author = { $regex: new RegExp(author, "i") };
       }
-      if (genre !== undefined) {
-        filter.genre = { $regex: genre, $options: "i" };
+      if (genre) {
+        filter.genre = { $regex: new RegExp(genre, "i") };
       }
-      if (language !== undefined) {
-        filter.genre = { $regex: language, $options: "i" };
+      if (language) {
+        filter.language = { $regex: new RegExp(language, "i") };
       }
-      //general search
-      if (search !== undefined) {
+
+      // General search query
+      if (search) {
         filter.$or = [
-          { title: { $regex: search, $options: "i" } },
-          { author: { $regex: search, $options: "i" } },
-          { genre: { $regex: search, $options: "i" } },
+          { title: { $regex: new RegExp(search, "i") } },
+          { author: { $regex: new RegExp(search, "i") } },
+          { genre: { $regex: new RegExp(search, "i") } },
         ];
       }
+
+      // Execute the database query with filters, pagination, and sorting
       const getBooks = await BookModel.find(filter)
         .skip(skip)
         .limit(productLimit)
-        .sort({ [sortparam]: sortorder }); //sorting
-      const totalBooks = await BookModel.count(filter);
+        .sort({ [sortparam]: sortorder });
+
+      const totalBooks = await BookModel.countDocuments(filter);
 
       if (getBooks.length > 0) {
-        const logMessage = `Time: ${new Date()} |success Message: Successfully received all books!|URL: ${
-          req.hostname
-        }${req.port ? ":" + req.port : ""}${req.originalUrl}`;
-        writeToLog(logFileSearch, logMessage);
-
         return sendResponse(
           res,
           HTTP_STATUS.FOUND,
@@ -227,10 +231,6 @@ class Book {
           }
         );
       }
-      const logMessage = `Time:${new Date()} |failed Message:No Books Found! |URL: ${
-        req.hostname
-      }${req.port ? ":" + req.port : ""}${req.originalUrl}| [error: ${error}]`;
-      writeToLog(logFileSearch, logMessage);
 
       return sendResponse(res, HTTP_STATUS.NOT_FOUND, "No Books Found!");
     } catch (error) {
@@ -238,7 +238,7 @@ class Book {
         req.hostname
       }${req.port ? ":" + req.port : ""}${req.originalUrl}| [error: ${error}]`;
       writeToLog(logFilePath, logMessage);
-      //console.log(error);
+      console.log(error);
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -246,6 +246,7 @@ class Book {
       );
     }
   }
+
   async deleteBooks(req, res) {
     const validation = validationResult(req).array();
     if (validation.length > 0) {

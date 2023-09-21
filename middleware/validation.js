@@ -1,4 +1,4 @@
-const { body, query, param } = require("express-validator");
+const { body, query,param} = require("express-validator");
 
 const authValidator = {
   login: [
@@ -362,7 +362,9 @@ const bookValidator = {
       .withMessage("Invalid time format for discountEndTime"),
   ],
   updateDiscount: [
-    param("bookID").exists().withMessage("query parameter is missing!"),
+    param("bookID")
+    .exists()
+    .withMessage("query parameter is missing!"),
     body("discountPercentage")
       .isNumeric()
       .withMessage("Discount percentage must be a number"),
@@ -374,32 +376,32 @@ const bookValidator = {
       .withMessage("Invalid time format for discountEndTime"),
   ],
   deleteBooks: [
-    body("bookID")
-      .exists()
-      .withMessage("bookID field is required")
-      .custom((value) => {
-        if (!Array.isArray(value)) {
-          // If it's not an array, check if it's a valid MongoDB ObjectId
-          if (value.trim() === "") {
-            throw new Error("bookID cannot be an empty string");
+    body('bookID')
+    .exists()
+    .withMessage('bookID field is required')
+    .custom((value) => {
+      if (!Array.isArray(value)) {
+        // If it's not an array, check if it's a valid MongoDB ObjectId
+        if (value.trim() === '') {
+          throw new Error('bookID cannot be an empty string');
+        }
+        if (!mongoose.Types.ObjectId.isValid(value)) {
+          throw new Error('Invalid bookID format');
+        }
+      } else {
+        // If it's an array, validate each item
+        for (const id of value) {
+          if (id.trim() === '') {
+            throw new Error('bookID cannot be an empty string');
           }
-          if (!mongoose.Types.ObjectId.isValid(value)) {
-            throw new Error("Invalid bookID format");
-          }
-        } else {
-          // If it's an array, validate each item
-          for (const id of value) {
-            if (id.trim() === "") {
-              throw new Error("bookID cannot be an empty string");
-            }
-            if (!mongoose.Types.ObjectId.isValid(id)) {
-              throw new Error("Invalid bookID format");
-            }
+          if (!mongoose.Types.ObjectId.isValid(id)) {
+            throw new Error('Invalid bookID format');
           }
         }
-        return true;
-      })
-      .toArray(),
+      }
+      return true;
+    })
+    .toArray(),
   ],
 };
 const userValidator = {
@@ -478,12 +480,14 @@ const userValidator = {
       .withMessage("User ID need to be provided!")
       .isMongoId()
       .withMessage("Invalid user ID format"),
-    body("amount").exists().withMessage("Balance need to be provided!"),
-    // .custom((value) => {
-    //   if (value >3000) {
-    //     throw new Error("Balance must be less than or eqaul to 3000");
-    //   }
-    // }),
+    body("amount")
+      .exists()
+      .withMessage("Balance need to be provided!")
+      // .custom((value) => {
+      //   if (value >3000) {
+      //     throw new Error("Balance must be less than or eqaul to 3000");
+      //   }
+      // }),
   ],
 };
 const cartValidator = {
@@ -529,16 +533,16 @@ const cartValidator = {
   ],
   viewCart: [
     body("userID")
-      .notEmpty()
-      .withMessage("userID field cannot be empty")
-      .custom((value) => {
-        // Check if it's a valid MongoDB ObjectId
-        if (!mongoose.Types.ObjectId.isValid(value)) {
-          throw new Error("Invalid userID format");
-        }
+    .notEmpty()
+    .withMessage('userID field cannot be empty')
+    .custom((value) => {
+      // Check if it's a valid MongoDB ObjectId
+      if (!mongoose.Types.ObjectId.isValid(value)) {
+        throw new Error('Invalid userID format');
+      }
 
-        return true;
-      }),
+      return true;
+    }),
   ],
 };
 const reviewValidator = {

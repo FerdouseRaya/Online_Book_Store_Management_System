@@ -84,9 +84,6 @@ class Cart {
             Total: bookPrice,
           });
           cartItem.discountPercentage += bookInfo.discountPercentage || 0;
-        } else {
-          selectedBook.quantity += quantity;
-          cartItem.TotalDiscountPercentage += bookInfo.discountPercentage || 0;
         }
       } else {
         const bookInfo = await BookModel.findById(selectedBook.book);

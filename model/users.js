@@ -23,30 +23,28 @@ const userSchema = new mongoose.Schema(
     address: {
       house: {
         type: String,
-        required: true,
+        required: false,
       },
       road: {
         type: String,
-        required: true,
+        required: false,
       },
       area: {
         type: String,
-        required: true,
+        required: false,
       },
       city: {
         type: String,
-        required: true,
+        required: false,
       },
       country: {
         type: String,
-        required: true,
+        required: false,
       },
     },
     wallets_balance: {
       type: Number,
       required: false,
-      min: 0,
-      max: 3000,
       default: 0,
     },
     failedLoginAttempts: {

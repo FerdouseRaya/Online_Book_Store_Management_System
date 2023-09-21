@@ -22,23 +22,23 @@ const authSchema = new mongoose.Schema(
     address: {
       house: {
         type: String,
-        required: true,
+        required: false,
       },
       road: {
         type: String,
-        required: true,
+        required: false,
       },
       area: {
         type: String,
-        required: true,
+        required: false,
       },
       city: {
         type: String,
-        required: true,
+        required: false,
       },
       country: {
         type: String,
-        required: true,
+        required: false,
       },
     },
     role: {

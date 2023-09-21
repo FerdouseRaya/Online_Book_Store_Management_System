@@ -95,7 +95,7 @@ class transaction {
         }
 
         transactionItems.push({ book: book._id, quantity });
-        book.stock = book.stock - quantity;
+        book.stock -= quantity;
         await book.save();
 
         transactionItems[transactionItems.length - 1].appliedDiscount =

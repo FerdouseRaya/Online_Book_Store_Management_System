@@ -45,3 +45,16 @@ Time:Wed Sep 20 2023 04:34:37 GMT+0600 (Bangladesh Standard Time) |failed|URL: 1
 Time:Wed Sep 20 2023 04:35:14 GMT+0600 (Bangladesh Standard Time) |failed|URL: 127.0.0.1/users/viewUsers| [error: ReferenceError: productLimit is not defined]
 Time:Wed Sep 20 2023 04:36:31 GMT+0600 (Bangladesh Standard Time) |failed|URL: 127.0.0.1/users/viewUsers| [error: ReferenceError: filter is not defined]
 Time: Wed Sep 20 2023 05:50:59 GMT+0600 (Bangladesh Standard Time) |success:Successfully logged in..."!|URL: 127.0.0.1/auth/login
+Time: Wed Sep 20 2023 11:22:27 GMT+0600 (Bangladesh Standard Time) |success:Successfully SingedUP!|URL: 127.0.0.1/auth/sign-up
+Time: Wed Sep 20 2023 11:22:52 GMT+0600 (Bangladesh Standard Time) |success:Successfully logged in..."!|URL: 127.0.0.1/auth/login
+Time: Wed Sep 20 2023 11:24:03 GMT+0600 (Bangladesh Standard Time) |success:Successfully SingedUP!|URL: 127.0.0.1/auth/sign-up
+Time: Wed Sep 20 2023 11:24:19 GMT+0600 (Bangladesh Standard Time) |success:Successfully logged in..."!|URL: 127.0.0.1/auth/login
+Time:Wed Sep 20 2023 11:35:12 GMT+0600 (Bangladesh Standard Time) |failed Message: Internal Server Error...|URL: 127.0.0.1/books/viewBySearch| [error: ReferenceError: error is not defined]
+Time:Wed Sep 20 2023 11:35:58 GMT+0600 (Bangladesh Standard Time) |failed Message: Internal Server Error...|URL: 127.0.0.1/books/viewBySearch| [error: ReferenceError: error is not defined]
+Time:Wed Sep 20 2023 11:36:01 GMT+0600 (Bangladesh Standard Time) |failed Message: Internal Server Error...|URL: 127.0.0.1/books/viewBySearch| [error: ReferenceError: error is not defined]
+Time: Wed Sep 20 2023 12:47:56 GMT+0600 (Bangladesh Standard Time) |success:Successfully logged in..."!|URL: 127.0.0.1/auth/login
+Time: Wed Sep 20 2023 13:30:17 GMT+0600 (Bangladesh Standard Time) |success:Successfully logged in..."!|URL: 127.0.0.1/auth/login
+Time:Wed Sep 20 2023 14:34:16 GMT+0600 (Bangladesh Standard Time) |failed Message: Internal Server Error...|URL: 127.0.0.1/books/viewBySearch?page=1&limit=3&sortparam=stock&sortorder=asc&bestSeller=true| [error: MongoServerError: $regex has to be a string]
+Time: Wed Sep 20 2023 16:28:25 GMT+0600 (Bangladesh Standard Time) |success:Successfully logged in..."!|URL: 127.0.0.1/auth/login
+Time: Wed Sep 20 2023 16:31:35 GMT+0600 (Bangladesh Standard Time) |success:Successfully SingedUP!|URL: 127.0.0.1/auth/sign-up
+Time: Wed Sep 20 2023 16:31:42 GMT+0600 (Bangladesh Standard Time) |success:Successfully logged in..."!|URL: 127.0.0.1/auth/login
